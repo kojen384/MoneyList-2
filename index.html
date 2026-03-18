@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Finance Manager v5</title>
+    <title>Pro Finance Manager v5.1</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
@@ -20,11 +20,28 @@
         input, select { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; border-radius: 10px; background: var(--card); color: var(--text); }
         .btn-main { background: var(--primary); color: white; border: none; width: 100%; padding: 15px; border-radius: 12px; font-size: 18px; cursor: pointer; margin-top: 5px; }
         
-        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-        .menu-item { background: #6366f1; color: white; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; text-decoration: none; }
+        /* Table & Print Styles */
+        .tab-bar { display: flex; gap: 5px; margin-bottom: 15px; }
+        .tab-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; background: var(--card); color: var(--text); }
+        .tab-btn.active { background: var(--primary); color: white; border: none; }
+        .excel-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+        .excel-table th, .excel-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        .excel-table th { background: #f1f5f9; color: #1e293b; }
         
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .menu-item { background: #6366f1; color: white; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; }
+        
+        @media print { 
+            .no-print { display: none !important; } 
+            body { background: white; color: black; padding: 0; }
+            .container { max-width: 100%; box-shadow: none; border-radius: 0; }
+            .excel-table { font-size: 12px; width: 100% !important; border: 1px solid #000; }
+            .excel-table th, .excel-table td { border: 1px solid #000; }
+        }
+
         #appContent, #recordsPage, #settingsPage, #proFeaturesPage { display: none; }
-        .income-text { color: var(--income); } .expense-text { color: var(--expense); }
+        .income-text { color: var(--income); font-weight: bold; } 
+        .expense-text { color: var(--expense); font-weight: bold; }
     </style>
 </head>
 <body>
@@ -37,7 +54,7 @@
     </div>
 </div>
 
-<div class="container" id="appContent">
+<div class="container no-print" id="appContent">
     <div class="header">
         <select id="currency" style="width: auto; margin:0;" onchange="updateUI()">
             <option value="Ks">Ks</option><option value="$">$</option><option value="฿">฿</option>
@@ -67,51 +84,54 @@
     </div>
 </div>
 
+<div class="container" id="recordsPage">
+    <button class="btn-icon no-print" onclick="showPage('appContent')" style="margin-bottom:15px;">← ရှေ့သို့</button>
+    <h2>ငွေစာရင်းအသေးစိတ်</h2>
+    
+    <div class="tab-bar no-print">
+        <button class="tab-btn active" onclick="filterData('all', this)">အားလုံး</button>
+        <button class="tab-btn" onclick="filterData('income', this)">ဝင်ငွေ</button>
+        <button class="tab-btn" onclick="filterData('expense', this)">ထွက်ငွေ</button>
+    </div>
+
+    <div style="background: #f1f5f9; padding: 12px; border-radius: 10px; margin-bottom: 10px; color: #1e293b; font-weight: bold;">
+        ဇယားစုစုပေါင်း: <span id="tableSum">0 Ks</span>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table class="excel-table" id="mainTable">
+            <thead>
+                <tr><th>ရက်စွဲ</th><th>Wallet</th><th>ပမာဏ</th><th>မှတ်ချက်</th><th class="no-print">လုပ်ဆောင်ချက်</th></tr>
+            </thead>
+            <tbody id="ebBody"></tbody>
+        </table>
+    </div>
+    
+    <div class="no-print" style="margin-top: 20px;">
+        <button class="btn-main" onclick="window.print()">Print ထုတ်မည် / စာရွက် Size ရွေးရန်</button>
+    </div>
+</div>
+
 <div class="container" id="proFeaturesPage">
     <button class="btn-icon" onclick="showPage('appContent')">← ရှေ့သို့</button>
     <h2>🚀 Pro Features</h2>
-    
     <div style="background: #f1f5f9; padding: 15px; border-radius: 15px; margin-bottom: 15px;">
         <h4>💰 Budget Limit (စားသောက်စရိတ်)</h4>
-        <input type="number" id="budgetLimit" placeholder="Limit သတ်မှတ်ရန် (ဥပမာ- ၃ သိန်း)" onchange="saveBudget()">
-        <p id="budgetStatus" style="font-size: 13px;"></p>
-    </div>
-
-    <div style="background: #f1f5f9; padding: 15px; border-radius: 15px;">
-        <h4>📅 Recurring (လစဉ်အလိုအလျောက်)</h4>
-        <input type="text" id="recNote" placeholder="အမည် (ဥပမာ- အိမ်လခ)">
-        <input type="number" id="recAmount" placeholder="ပမာဏ">
-        <button class="btn-main" onclick="addRecurring()" style="font-size: 14px; padding: 10px;">ပုံမှန်စာရင်းထဲထည့်မည်</button>
-        <div id="recList" style="margin-top: 10px; font-size: 13px;"></div>
+        <input type="number" id="budgetLimit" placeholder="Limit သတ်မှတ်ရန်" onchange="saveBudget()">
     </div>
 </div>
 
 <div class="container" id="settingsPage">
     <button class="btn-icon" onclick="showPage('appContent')">← ရှေ့သို့</button>
-    <h2 style="text-align:center;">Settings</h2>
-    <div id="userProfile" style="text-align:center;"></div>
-    
-    <button class="btn-main" onclick="alert('မဂ်လာပါ ဒီဆော့ဝဲလ်လေးကတော့ ငွေကိုစာရင်းဇယားနဲ့ စနစ်တကျမှတ်ထားဖို့ပဲဖြစ်ပါတယ် (ဆော့ဝဲလ်ရေးသူ-မောင်ဂျမ်း)')" style="background: #6366f1; margin-top: 20px;">ℹ️ App အကြောင်း</button>
-    
+    <div id="userProfile" style="text-align:center; margin-top:20px;"></div>
+    <button class="btn-main" onclick="alert('မဂ်လာပါ ဒီဆော့ဝဲလ်လေးကတော့ ငွေကိုစာရင်းဇယားနဲ့ စနစ်တကျမှတ်ထားဖို့ပဲဖြစ်ပါတယ် (ဆော့ဝဲလ်ရေးသူ-မောင်ဂျမ်း)')" style="margin-top:20px;">ℹ️ App အကြောင်း</button>
     <button class="btn-main" onclick="handleLogout()" style="background: #ef4444; margin-top: 10px;">Logout ထွက်မည်</button>
-</div>
-
-<div class="container" id="recordsPage">
-    <button class="btn-icon" onclick="showPage('appContent')">← ရှေ့သို့</button>
-    <h2>ငွေစာရင်းအသေးစိတ်</h2>
-    <div style="overflow-x: auto;">
-        <table style="width:100%; border-collapse: collapse;" id="excelTable">
-            <thead><tr style="border-bottom: 2px solid #ddd;"><th>ရက်စွဲ</th><th>Wallet</th><th>ပမာဏ</th><th>မှတ်ချက်</th></tr></thead>
-            <tbody id="ebBody"></tbody>
-        </table>
-    </div>
 </div>
 
 <script>
     const CLIENT_ID = '333590112476-29g9dh2dcvfi37n8ubp5htdfk5u3pcv1.apps.googleusercontent.com';
     let records = JSON.parse(localStorage.getItem('finance_v5')) || [];
-    let recurring = JSON.parse(localStorage.getItem('rec_v5')) || [];
-    let budget = localStorage.getItem('budget_v5') || 0;
+    let currentFilter = 'all';
     let tokenClient;
 
     function gsiLoaded() {
@@ -138,40 +158,58 @@
         const wal = document.getElementById('wallet').value;
         const type = document.getElementById('type').value;
         if(!amt) return;
-        
-        // Budget Check
-        if(type === 'expense' && budget > 0) {
-            const currentSpent = records.filter(r => r.type === 'expense').reduce((s, r) => s + r.amount, 0);
-            if(currentSpent + amt > budget) alert("⚠️ သတိပေးချက်: သင်သတ်မှတ်ထားသော Budget Limit ကျော်လွန်နေပါပြီ!");
-        }
-
-        records.push({ id: Date.now(), date: new Date().toISOString().split('T')[0], wallet: wal, type: type, amount: amt, note: document.getElementById('note').value });
-        save();
-    }
-
-    function save() {
+        records.push({ id: Date.now(), date: new Date().toLocaleDateString('en-GB'), wallet: wal, type: type, amount: amt, note: document.getElementById('note').value });
         localStorage.setItem('finance_v5', JSON.stringify(records));
         document.getElementById('amount').value = '';
+        document.getElementById('note').value = '';
         updateUI();
     }
 
-    function saveBudget() { budget = document.getElementById('budgetLimit').value; localStorage.setItem('budget_v5', budget); updateUI(); }
+    function renderTable() {
+        const body = document.getElementById('ebBody');
+        const cur = document.getElementById('currency').value;
+        body.innerHTML = '';
+        let filtered = records.filter(r => currentFilter === 'all' || r.type === currentFilter);
+        
+        let tSum = 0;
+        filtered.forEach(r => {
+            tSum += (r.type === 'income' ? r.amount : -r.amount);
+            body.innerHTML += `<tr>
+                <td>${r.date}</td>
+                <td>${r.wallet || 'N/A'}</td>
+                <td class="${r.type}-text">${r.type === 'income' ? '+' : '-'}${r.amount.toLocaleString()}</td>
+                <td>${r.note}</td>
+                <td class="no-print"><button onclick="deleteData(${r.id})" style="border:none; background:none; cursor:pointer;">🗑️</button></td>
+            </tr>`;
+        });
+        document.getElementById('tableSum').innerText = tSum.toLocaleString() + " " + cur;
+    }
+
+    function deleteData(id) {
+        if(confirm("ဖျက်မှာလား?")) {
+            records = records.filter(r => r.id !== id);
+            localStorage.setItem('finance_v5', JSON.stringify(records));
+            updateUI();
+        }
+    }
+
+    function filterData(type, btn) {
+        currentFilter = type;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderTable();
+    }
 
     function updateUI() {
         const cur = document.getElementById('currency').value;
         const inc = records.filter(r => r.type === 'income').reduce((s, r) => s + r.amount, 0);
         const exp = records.filter(r => r.type === 'expense').reduce((s, r) => s + r.amount, 0);
         document.getElementById('totalBalance').innerText = (inc - exp).toLocaleString() + " " + cur;
-        
-        const body = document.getElementById('ebBody');
-        body.innerHTML = '';
-        records.forEach(r => {
-            body.innerHTML += `<tr><td>${r.date}</td><td>${r.wallet}</td><td class="${r.type}-text">${r.amount.toLocaleString()}</td><td>${r.note}</td></tr>`;
-        });
+        renderTable();
     }
 
     function exportToExcel() {
-        let csv = "ရက်စွဲ,Wallet,အမျိုးအစား,ပမာဏ,မှတ်ချက်\n";
+        let csv = "Date,Wallet,Type,Amount,Note\n";
         records.forEach(r => { csv += `${r.date},${r.wallet},${r.type},${r.amount},${r.note}\n`; });
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = window.URL.createObjectURL(blob);
@@ -185,7 +223,7 @@
     }
 
     function handleLogout() { sessionStorage.clear(); location.reload(); }
-    window.onload = () => { if(!sessionStorage.getItem('isLoggedIn')) document.getElementById('loginOverlay').style.display = 'flex'; document.getElementById('budgetLimit').value = budget; };
+    window.onload = () => { if(!sessionStorage.getItem('isLoggedIn')) document.getElementById('loginOverlay').style.display = 'flex'; };
 </script>
 <script async defer src="https://accounts.google.com/gsi/client" onload="gsiLoaded()"></script>
 </body>
