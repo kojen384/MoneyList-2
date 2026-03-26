@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MGJEN Worker HR - Document Tracking</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-firestore-compat.js"></script>
+    <style>
+        :root { --primary: #2563eb; --success: #22c55e; --warning: #f59e0b; --danger: #ef4444; --bg: #f1f5f9; --sidebar: #0f172a; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', 'Pyidaungsu', sans-serif; }
+        body { background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
+
+        #loginOverlay { position: fixed; inset: 0; background: var(--sidebar); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .login-box { background: white; padding: 40px; border-radius: 15px; width: 350px; text-align: center; }
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
+        
+        .sidebar { width: 250px; background: var(--sidebar); color: white; padding: 20px; flex-shrink: 0; }
+        .sidebar h2 { color: #38bdf8; text-align: center; margin-bottom: 25px; border-bottom: 1px solid #334155; padding-bottom: 15px; }
+        .sidebar li { list-style: none; padding: 12px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .sidebar li:hover, .sidebar li.active { background: var(--primary); }
+        
+        .main { flex: 1; padding: 25px; overflow-y: auto; }
+        .card { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
+        
+        .stat-card { cursor: pointer; transition: 0.3s; border: 2px solid transparent; }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-color: var(--primary); }
+        .stat-card.active-filter { border-color: var(--primary); background: #eff6ff; }
+
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { text-align: left; padding: 12px; background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #64748b; font-size: 12px; }
+        td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+        
+        .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; background: var(--primary); }
+        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; }
+        label { font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 5px; display: block; }
+        
+        section { display: none; }
+        section.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-info { background: #e0f2fe; color: #0369a1; }
+        .badge-pp { background: #f3e8ff; color: #6b21a8; }
+        .days-left { font-size: 10px; display: block; margin-top: 2px; font-weight: bold; }
+
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 15px; width: 450px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .detail-label { color: #64748b; font-size: 13px; }
+        .detail-value { font-weight: 600; font-size: 13px; color: #1e293b; text-align: right; }
+        .close-modal { position: absolute; top: 15px; right: 15px; cursor: pointer; font-size: 20px; color: #94a3b8; }
+    </style>
+</head>
+<body>
+
+    <div id="loginOverlay">
+        <div class="login-box">
+            <h2 id="lang-loginTitle">Worker Admin</h2><br>
+            <input type="text" id="loginUser" placeholder="User ID">
+            <input type="password" id="loginPass" placeholder="Password">
+            <button class="btn" style="width:100%" onclick="handleLogin()" id="lang-loginBtn">Login</button>
+        </div>
+    </div>
+
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h3 style="margin-bottom: 20px; color: var(--primary);" id="lang-detailTitle">Worker Full Details</h3>
+            <div id="modalBody"></div>
+            <button class="btn" style="width:100%; margin-top:20px;" onclick="closeModal()" id="lang-closeBtn">Close</button>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <h2>MGJEN PPS</h2>
+        <ul>
+            <li class="active" id="btn-list" onclick="switchTab('list')"><i class="fas fa-users"></i> <span id="lang-navAll">All Workers</span></li>
+            <li id="btn-add" onclick="switchTab('add')"><i class="fas fa-user-plus"></i> <span id="lang-navAdd">Register Worker</span></li>
+            <li id="btn-settings" onclick="switchTab('settings')"><i class="fas fa-cog"></i> <span id="lang-navSettings">Settings</span></li>
+            <li onclick="handleLogout()" style="color:var(--danger); margin-top: 20px;"><i class="fas fa-sign-out-alt"></i> <span id="lang-navLogout">Logout</span></li>
+        </ul>
+    </div>
+
+    <div class="main">
+        <section id="list-tab" class="active">
+            <header style="margin-bottom:20px;">
+                <h1 id="lang-mainTitle">Passport Information List</h1>
+            </header>
+            
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px; margin-bottom:20px;">
+                <div class="card stat-card active-filter" id="stat-all" onclick="filterByStatus('all')">
+                    <h3 id="lang-statTotal">Total Workers</h3>
+                    <p id="totalCount" style="font-size: 24px; font-weight: bold;">0</p>
+                </div>
+                <div class="card stat-card" id="stat-wp" onclick="filterByStatus('wpExp')" style="color:var(--danger)">
+                    <h3 id="lang-statWpExp">WP Expired</h3>
+                    <p id="wpExpCount" style="font-size: 24px; font-weight: bold;">0</p>
+                </div>
+                <div class="card stat-card" id="stat-report" onclick="filterByStatus('reportDue')" style="color:var(--warning)">
+                    <h3 id="lang-stat90Days">90 Days Due</h3>
+                    <p id="reportDueCount" style="font-size: 24px; font-weight: bold;">0</p>
+                </div>
+                <div class="card stat-card" id="stat-mou" onclick="filterByStatus('mou')" style="color:var(--primary)">
+                    <h3 id="lang-statMou">MOU Workers</h3>
+                    <p id="mouCount" style="font-size: 24px; font-weight: bold;">0</p>
+                </div>
+            </div>
+
+            <div class="card" style="overflow-x:auto;">
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <input type="text" id="searchBox" placeholder="Search..." onkeyup="renderTable()" style="flex:1; min-width:200px; margin-bottom:0;">
+                    <select id="ppTypeFilter" onchange="renderTable()" style="width: 200px; margin-bottom:0;">
+                        <option value="" id="lang-optAll">All Types</option>
+                        <option value="MOU">MOU</option>
+                        <option value="CI">CI</option>
+                        <option value="Pink">Pink</option>
+                    </select>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th id="lang-thPhoto">Photo</th><th id="lang-thId">ID</th><th id="lang-thName">Name</th>
+                            <th id="lang-thType">Type</th><th id="lang-thWp">WP Exp</th><th id="lang-th90">90 Days</th><th id="lang-thAction">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="workerTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="add-tab">
+            <h2 id="formHeader">Register Worker</h2>
+            <div class="card" style="max-width:800px; margin:20px auto;">
+                <input type="hidden" id="editId">
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:15px;">
+                    <div><label id="lang-labelStaffId">Staff ID</label><input type="text" id="staffId"></div>
+                    <div><label id="lang-labelName">Full Name</label><input type="text" id="name"></div>
+                    <div>
+                        <label id="lang-labelPpType">PP Type</label>
+                        <select id="ppType">
+                            <option value="MOU">MOU</option>
+                            <option value="CI">CI</option>
+                            <option value="Pink">Pink</option>
+                            <option value="Processing">လက်ဗွေနှိပ်ဆဲ</option>
+                        </select>
+                    </div>
+                    <div><label id="lang-labelPpNo">Passport No</label><input type="text" id="passportNo"></div>
+                    <div><label id="lang-labelWpNo">WP Number</label><input type="text" id="wpNumber"></div>
+                    <div><label id="lang-labelOfWp">Of WP</label><input type="text" id="ofWorkPermit"></div>
+                    <div><label id="lang-labelDob">DOB</label><input type="date" id="dob"></div>
+                    <div><label id="lang-labelPpExp">PP Expiry</label><input type="date" id="ppExpiry"></div>
+                    <div><label id="lang-labelWpExp">WP Expiry</label><input type="date" id="wpExpiry"></div>
+                    <div><label id="lang-labelReport">90 Days Date</label><input type="date" id="reportDate"></div>
+                    <div>
+                        <label id="lang-labelSocial">Social Card</label>
+                        <select id="hasSocialCard" onchange="toggleSocialInput()">
+                            <option value="No">No</option>
+                            <option value="Yes">Yes</option>
+                        </select>
+                    </div>
+                    <div id="socialNumDiv" style="display:none;"><label id="lang-labelSocialNo">Social No</label><input type="text" id="socialNo"></div>
+                </div>
+                <label id="lang-labelPhoto">Photo</label><input type="file" accept="image/*" onchange="previewImage(event)">
+                <button class="btn" id="saveBtn" style="width:100%; margin-top:10px;" onclick="handleSave()">Save Worker</button>
+            </div>
+        </section>
+
+        <section id="settings-tab">
+            <h2 id="lang-settingsTitle">System Settings</h2>
+            <div class="card" style="max-width:500px; margin:20px auto;">
+                <h3 style="margin-bottom:15px;"><i class="fas fa-language"></i> <span id="lang-setLang">Language</span></h3>
+                <select id="languageSelect" onchange="changeLanguage(this.value)">
+                    <option value="en">English</option>
+                    <option value="mm">မြန်မာဘာသာ</option>
+                    <option value="th">ไทย</option>
+                </select>
+                <hr style="margin:25px 0; border:0; border-top:1px solid #eee;">
+                <h3 style="margin-bottom:15px;"><i class="fas fa-user-shield"></i> <span id="lang-setAuth">Admin Login</span></h3>
+                <label id="lang-setNewUser">New User ID</label>
+                <input type="text" id="newUserId" placeholder="Current: admin">
+                <label id="lang-setNewPass">New Password</label>
+                <input type="password" id="newPass" placeholder="Current: 1234">
+                <button class="btn" style="width:100%;" onclick="updateAuth()" id="lang-setUpdateBtn">Update Login</button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // --- Firebase Config (Keep these private if possible) ---
+        const firebaseConfig = { apiKey: "AIzaSyDY8o3RX38-NlRkKeOC6gHWtfKXPcaxas", authDomain: "mgjen-8b4f5.firebaseapp.com", projectId: "mgjen-8b4f5", storageBucket: "mgjen-8b4f5.firebasestorage.app", messagingSenderId: "685152708249", appId: "1:685152708249:web:6334e940e8306f0ff6ba08" };
+        firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
+
+        let allWorkers = [], currentBase64 = "", activeFilter = 'all', currentLang = 'en';
+
+        // --- Multi-language Data ---
+        const translations = {
+            en: {
+                loginTitle: "Worker Admin", loginBtn: "Login", detailTitle: "Worker Full Details", closeBtn: "Close",
+                navAll: "All Workers", navAdd: "Register", navSettings: "Settings", navLogout: "Logout",
+                mainTitle: "Passport Information List", statTotal: "Total Workers", statWpExp: "WP Expired", stat90Days: "90 Days Due", statMou: "MOU Workers",
+                thPhoto: "Photo", thId: "ID", thName: "Name", thType: "Type", thWp: "WP Exp", th90: "90 Days", thAction: "Action",
+                labelStaffId: "Staff ID", labelName: "Full Name", labelPpType: "PP Type", labelPpNo: "Passport No", labelWpNo: "WP Number", labelOfWp: "Of WP", labelDob: "Birth Date", labelPpExp: "PP Expiry", labelWpExp: "WP Expiry", labelReport: "90 Days Report", labelSocial: "Social Security", labelSocialNo: "Social No", labelPhoto: "Worker Photo",
+                settingsTitle: "System Settings", setLang: "Language", setAuth: "Admin Login", setNewUser: "New User ID", setNewPass: "New Password", setUpdateBtn: "Update Login", optAll: "All PP Types"
+            },
+            mm: {
+                loginTitle: "အက်ဒမင် ဝင်ရောက်ရန်", loginBtn: "လော့ဂ်အင်", detailTitle: "အသေးစိတ်အချက်အလက်", closeBtn: "ပိတ်မည်",
+                navAll: "ဝန်ထမ်းစာရင်း", navAdd: "စာရင်းသွင်းရန်", navSettings: "ချိန်ညှိချက်", navLogout: "ထွက်ရန်",
+                mainTitle: "Passport အချက်အလက်များ", statTotal: "စုစုပေါင်း", statWpExp: "WP ကုန်ဆုံး", stat90Days: "ရက် ၉၀ ပြည့်ရန်", statMou: "MOU ဝန်ထမ်း",
+                thPhoto: "ပုံ", thId: "နံပါတ်", thName: "အမည်", thType: "အမျိုးအစား", thWp: "WP ကုန်ရက်", th90: "ရက် ၉၀", thAction: "ပြင်ဆင်",
+                labelStaffId: "ဝန်ထမ်းနံပါတ်", labelName: "နာမည်အပြည့်အစုံ", labelPpType: "ပတ်စပို့အမျိုးအစား", labelPpNo: "ပတ်စပို့နံပါတ်", labelWpNo: "WP နံပါတ်", labelOfWp: "WP အသေးစိတ်", labelDob: "မွေးသက္ကရာဇ်", labelPpExp: "PP ကုန်ဆုံးရက်", labelWpExp: "WP ကုန်ဆုံးရက်", labelReport: "ရက် ၉၀ တိုင်ရက်", labelSocial: "ပက်ကန်ကတ်", labelSocialNo: "ပက်ကန်နံပါတ်", labelPhoto: "ဝန်ထမ်းပုံ",
+                settingsTitle: "ချိန်ညှိချက်များ", setLang: "ဘာသာစကား", setAuth: "အကောင့်ပြောင်းရန်", setNewUser: "ယူဆာအသစ်", setNewPass: "စကားဝှက်အသစ်", setUpdateBtn: "ပြင်ဆင်မည်", optAll: "အားလုံး"
+            },
+            th: {
+                loginTitle: "ผู้ดูแลระบบ", loginBtn: "เข้าสู่ระบบ", detailTitle: "รายละเอียดทั้งหมด", closeBtn: "ปิด",
+                navAll: "พนักงานทั้งหมด", navAdd: "ลงทะเบียน", navSettings: "การตั้งค่า", navLogout: "ออกจากระบบ",
+                mainTitle: "รายการข้อมูลพาสปอร์ต", statTotal: "ทั้งหมด", statWpExp: "WP หมดอายุ", stat90Days: "ครบ 90 วัน", statMou: "MOU",
+                thPhoto: "รูป", thId: "รหัส", thName: "ชื่อ", thType: "ประเภท", thWp: "WP หมดอายุ", th90: "90 วัน", thAction: "จัดการ",
+                labelStaffId: "รหัสพนักงาน", labelName: "ชื่อ-นามสกุล", labelPpType: "ประเภทพาสปอร์ต", labelPpNo: "เลขพาสปอร์ต", labelWpNo: "เลข WP", labelOfWp: "รายละเอียด WP", labelDob: "วันเกิด", labelPpExp: "PP หมดอายุ", labelWpExp: "WP หมดอายุ", labelReport: "ครบ 90 วัน", labelSocial: "ประกันสังคม", labelSocialNo: "เลขประกันสังคม", labelPhoto: "รูปภาพ",
+                settingsTitle: "ตั้งค่าระบบ", setLang: "ภาษา", setAuth: "เปลี่ยนรหัสผ่าน", setNewUser: "ชื่อผู้ใช้ใหม่", setNewPass: "รหัสผ่านใหม่", setUpdateBtn: "อัปเดต", optAll: "ทั้งหมด"
+            }
+        };
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('mgjen_lang', lang);
+            Object.keys(translations[lang]).forEach(key => {
+                const el = document.getElementById('lang-' + key);
+                if(el) el.innerText = translations[lang][key];
+            });
+            renderTable(); updateStats();
+        }
+
+        async function handleLogin() {
+            const u = document.getElementById('loginUser').value, p = document.getElementById('loginPass').value;
+            const storedU = localStorage.getItem('mgjen_user') || "admin";
+            const storedP = localStorage.getItem('mgjen_pass') || "1234";
+            if(u === storedU && p === storedP) { sessionStorage.setItem("isLoggedIn", "true"); location.reload(); }
+            else alert("Error: Access Denied");
+        }
+
+        function updateAuth() {
+            const newU = document.getElementById('newUserId').value;
+            const newP = document.getElementById('newPass').value;
+            if(!newU || !newP) return alert("Fill both fields");
+            localStorage.setItem('mgjen_user', newU); localStorage.setItem('mgjen_pass', newP);
+            alert("Updated! Logging out..."); handleLogout();
+        }
+
+        function handleLogout() { sessionStorage.clear(); location.reload(); }
+
+        async function init() {
+            const savedLang = localStorage.getItem('mgjen_lang') || 'en';
+            document.getElementById('languageSelect').value = savedLang;
+            changeLanguage(savedLang);
+            if(sessionStorage.getItem("isLoggedIn") !== "true") return;
+            document.getElementById('loginOverlay').style.display = 'none';
+            await loadData();
+        }
+
+        async function loadData() {
+            const snap = await db.collection("workers_pps_final").get();
+            allWorkers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            updateStats(); renderTable();
+        }
+
+        function filterByStatus(type) {
+            activeFilter = type;
+            document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active-filter'));
+            const map = { all: 'all', wpExp: 'wp', reportDue: 'report', mou: 'mou' };
+            document.getElementById('stat-' + map[type]).classList.add('active-filter');
+            renderTable();
+        }
+
+        function getDaysDiff(dateStr) {
+            if(!dateStr) return null;
+            const today = new Date(); today.setHours(0,0,0,0);
+            return Math.ceil((new Date(dateStr) - today) / (1000 * 60 * 60 * 24));
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('workerTableBody');
+            const search = document.getElementById('searchBox').value.toLowerCase();
+            const typeFilter = document.getElementById('ppTypeFilter').value;
+            const today = new Date(); today.setHours(0,0,0,0);
+
+            let filtered = allWorkers.filter(w => 
+                (w.name.toLowerCase().includes(search) || (w.staffId && w.staffId.toLowerCase().includes(search))) &&
+                (typeFilter === "" || w.ppType === typeFilter)
+            );
+
+            if(activeFilter === 'wpExp') filtered = filtered.filter(w => new Date(w.wpExpiry) < today);
+            if(activeFilter === 'reportDue') filtered = filtered.filter(w => getDaysDiff(w.reportDate) <= 7 && getDaysDiff(w.reportDate) >= 0);
+            if(activeFilter === 'mou') filtered = filtered.filter(w => w.ppType === 'MOU');
+
+            tbody.innerHTML = filtered.map(w => {
+                const wpDiff = getDaysDiff(w.wpExpiry);
+                const rDiff = getDaysDiff(w.reportDate);
+                return `<tr>
+                    <td><img src="${w.photo || 'https://via.placeholder.com/35'}" style="width:35px;height:35px;border-radius:50%;object-fit:cover;cursor:pointer;border:1px solid #ddd" onclick="viewDetail('${w.id}')"></td>
+                    <td><span class="badge badge-info">${w.staffId || '-'}</span></td>
+                    <td><strong style="cursor:pointer; color:var(--primary);" onclick="viewDetail('${w.id}')">${w.name}</strong></td>
+                    <td><span class="badge badge-pp">${w.ppType}</span></td>
+                    <td><span class="badge ${wpDiff < 0 ? 'badge-danger' : wpDiff <= 7 ? 'badge-warning' : 'badge-success'}">${w.wpExpiry || '-'}</span><span class="days-left">${wpDiff < 0 ? 'Expired' : wpDiff + 'd left'}</span></td>
+                    <td><span class="badge ${rDiff < 0 ? 'badge-danger' : rDiff <= 7 ? 'badge-warning' : 'badge-success'}">${w.reportDate || '-'}</span><span class="days-left">${rDiff < 0 ? 'Expired' : rDiff + 'd left'}</span></td>
+                    <td><i class="fas fa-edit" style="color:var(--warning);cursor:pointer;margin-right:10px" onclick="editWorker('${w.id}')"></i><i class="fas fa-trash" style="color:var(--danger);cursor:pointer" onclick="deleteWorker('${w.id}')"></i></td>
+                </tr>`;
+            }).join('');
+        }
+
+        window.viewDetail = function(id) {
+            const w = allWorkers.find(x => x.id === id);
+            const lang = translations[currentLang];
+            document.getElementById('modalBody').innerHTML = `
+                <div style="text-align:center; margin-bottom:15px;"><img src="${w.photo || 'https://via.placeholder.com/100'}" style="width:100px;height:100px;border-radius:15px;object-fit:cover;border:3px solid var(--primary);"></div>
+                <div class="detail-row"><span class="detail-label">${lang.labelName}</span><span class="detail-value">${w.name}</span></div>
+                <div class="detail-row"><span class="detail-label">${lang.labelStaffId}</span><span class="detail-value">${w.staffId || '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">${lang.labelPpNo}</span><span class="detail-value">${w.passportNo}</span></div>
+                <div class="detail-row"><span class="detail-label">${lang.labelWpNo}</span><span class="detail-value">${w.wpNumber || '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">${lang.labelPpExp}</span><span class="detail-value">${w.ppExpiry || '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">${lang.labelWpExp}</span><span class="detail-value">${w.wpExpiry || '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">${lang.labelReport}</span><span class="detail-value">${w.reportDate || '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">${lang.labelSocialNo}</span><span class="detail-value">${w.socialNo || 'N/A'}</span></div>
+            `;
+            document.getElementById('detailModal').style.display = 'flex';
+        }
+
+        function updateStats() {
+            const today = new Date(); today.setHours(0,0,0,0);
+            document.getElementById('totalCount').innerText = allWorkers.length;
+            document.getElementById('wpExpCount').innerText = allWorkers.filter(w => new Date(w.wpExpiry) < today).length;
+            document.getElementById('reportDueCount').innerText = allWorkers.filter(w => getDaysDiff(w.reportDate) <= 7 && getDaysDiff(w.reportDate) >= 0).length;
+            document.getElementById('mouCount').innerText = allWorkers.filter(w => w.ppType === 'MOU').length;
+        }
+
+        window.closeModal = function() { document.getElementById('detailModal').style.display = 'none'; }
+        async function handleSave() {
+            const id = document.getElementById('editId').value;
+            const data = { staffId: document.getElementById('staffId').value, name: document.getElementById('name').value, ppType: document.getElementById('ppType').value, passportNo: document.getElementById('passportNo').value, wpNumber: document.getElementById('wpNumber').value || "", ofWorkPermit: document.getElementById('ofWorkPermit').value || "", dob: document.getElementById('dob').value, ppExpiry: document.getElementById('ppExpiry').value, wpExpiry: document.getElementById('wpExpiry').value, reportDate: document.getElementById('reportDate').value, hasSocialCard: document.getElementById('hasSocialCard').value, socialNo: document.getElementById('socialNo').value || "", photo: currentBase64 };
+            if(!data.name) return alert("Name is required");
+            try { id ? await db.collection("workers_pps_final").doc(id).update(data) : await db.collection("workers_pps_final").add(data); alert("Saved!"); loadData(); switchTab('list'); resetForm(); } catch(e) { alert("Error!"); }
+        }
+        function editWorker(id) {
+            const w = allWorkers.find(x => x.id === id); document.getElementById('editId').value = id;
+            document.getElementById('staffId').value = w.staffId || ""; document.getElementById('name').value = w.name;
+            document.getElementById('ppType').value = w.ppType; document.getElementById('passportNo').value = w.passportNo;
+            document.getElementById('wpNumber').value = w.wpNumber || ""; document.getElementById('ofWorkPermit').value = w.ofWorkPermit || "";
+            document.getElementById('dob').value = w.dob || ""; document.getElementById('ppExpiry').value = w.ppExpiry;
+            document.getElementById('wpExpiry').value = w.wpExpiry; document.getElementById('reportDate').value = w.reportDate;
+            document.getElementById('hasSocialCard').value = w.hasSocialCard; document.getElementById('socialNo').value = w.socialNo || "";
+            currentBase64 = w.photo; toggleSocialInput(); switchTab('add'); document.getElementById('formHeader').innerText = "Edit Worker";
+        }
+        async function deleteWorker(id) { if(confirm("Confirm Delete?")) { await db.collection("workers_pps_final").doc(id).delete(); loadData(); } }
+        function switchTab(t) { 
+            document.querySelectorAll('section').forEach(s => s.classList.remove('active')); document.getElementById(t + '-tab').classList.add('active'); 
+            document.querySelectorAll('.sidebar li').forEach(li => li.classList.remove('active')); document.getElementById('btn-' + t).classList.add('active');
+        }
+        function toggleSocialInput() { document.getElementById('socialNumDiv').style.display = (document.getElementById('hasSocialCard').value === "Yes") ? "block" : "none"; }
+        function resetForm() { document.getElementById('editId').value = ""; currentBase64 = ""; document.getElementById('formHeader').innerText = "Register Worker"; }
+        function previewImage(e) { const r = new FileReader(); r.onload = () => currentBase64 = r.result; r.readAsDataURL(e.target.files[0]); }
+        init();
+    </script>
+</body>
+</html>
