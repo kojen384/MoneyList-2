@@ -6,9 +6,6 @@
     <title> HR Worker HR - Document Tracking</title>
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/912/912214.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-firestore-compat.js"></script>
     <style>
@@ -23,7 +20,7 @@
         
         .sidebar { width: 250px; background: var(--sidebar); color: white; padding: 20px; flex-shrink: 0; }
         .sidebar-header { text-align: center; margin-bottom: 25px; border-bottom: 1px solid #334155; padding-bottom: 20px; }
-        .sidebar-header img { width: 50px; height: 50px; margin-bottom: 10px; filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.5)); }
+        .sidebar-header img { width: 50px; height: 50px; margin-bottom: 10px; }
         .sidebar h2 { color: #38bdf8; font-size: 1.2rem; }
         
         .sidebar li { list-style: none; padding: 12px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; }
@@ -41,7 +38,7 @@
         td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
         
         .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; background: var(--primary); }
-        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; background: white; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; }
         label { font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 5px; display: block; }
         
         section { display: none; }
@@ -57,14 +54,11 @@
         .days-left { font-size: 10px; display: block; margin-top: 2px; font-weight: bold; }
 
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
-        .modal-content { background: white; padding: 25px; border-radius: 15px; width: 450px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .modal-content { background: white; padding: 25px; border-radius: 15px; width: 500px; position: relative; max-height: 90vh; overflow-y: auto; }
         .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
         .detail-label { color: #64748b; font-size: 13px; }
         .detail-value { font-weight: 600; font-size: 13px; color: #1e293b; }
         .close-modal { position: absolute; top: 15px; right: 15px; cursor: pointer; font-size: 20px; color: #94a3b8; }
-        
-        /* Date Input Specific Style */
-        .flatpickr-input { background-color: white !important; }
     </style>
 </head>
 <body>
@@ -150,11 +144,19 @@
 
         <section id="add-tab">
             <h2 id="formHeader">Register Worker Information</h2>
-            <div class="card" style="max-width:800px; margin:20px auto;">
+            <div class="card" style="max-width:900px; margin:20px auto;">
                 <input type="hidden" id="editId">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:15px;">
                     <div><label id="lang-labelStaffId">Staff ID</label><input type="text" id="staffId"></div>
                     <div><label id="lang-labelName">Full Name</label><input type="text" id="name"></div>
+                    <div>
+                        <label id="lang-labelSex">Sex</label>
+                        <select id="sex">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+                    <div><label id="lang-labelDob">Date of Birth</label><input type="date" id="dob"></div>
                     <div>
                         <label id="lang-labelPpType">PP Type</label>
                         <select id="ppType">
@@ -165,14 +167,17 @@
                         </select>
                     </div>
                     <div><label id="lang-labelPpNo">Passport Number</label><input type="text" id="passportNo"></div>
+                    <div><label id="lang-labelPpExp">Passport Expiry</label><input type="date" id="ppExpiry"></div>
+                    <div><label id="lang-labelVisaExp">Visa Expiry</label><input type="date" id="visaExpiry"></div>
                     <div><label id="lang-labelWpNo">WP Number</label><input type="text" id="wpNumber"></div>
+                    <div><label id="lang-labelWpExp">WP Expiry Date</label><input type="date" id="wpExpiry"></div>
                     <div><label id="lang-labelOfWp">Of work permit</label><input type="text" id="ofWorkPermit"></div>
-                    
-                    <div><label id="lang-labelDob">Date of Birth</label><input type="text" id="dob" class="datepicker" placeholder="DD/MM/YYYY"></div>
-                    <div><label id="lang-labelPpExp">Passport Expiry</label><input type="text" id="ppExpiry" class="datepicker" placeholder="DD/MM/YYYY"></div>
-                    <div><label id="lang-labelWpExp">WP Expiry Date</label><input type="text" id="wpExpiry" class="datepicker" placeholder="DD/MM/YYYY"></div>
-                    <div><label id="lang-labelReport">90 Days Report Date</label><input type="text" id="reportDate" class="datepicker" placeholder="DD/MM/YYYY"></div>
-                    
+                    <div><label id="lang-labelIdWork">ID Work</label><input type="text" id="idWork"></div>
+                    <div><label id="lang-labelReport">90 Days Report Date</label><input type="date" id="reportDate"></div>
+                    <div><label id="lang-labelSsoNo">SSO NO</label><input type="text" id="ssoNo"></div>
+                    <div><label id="lang-labelSsoExp">SSO EXPIRY CARD</label><input type="date" id="ssoExpiry"></div>
+                    <div><label id="lang-labelPinkNo">PINK CARD NO</label><input type="text" id="pinkCardNo"></div>
+                    <div><label id="lang-labelPinkExp">PINK EXPIRY</label><input type="date" id="pinkExpiry"></div>
                     <div>
                         <label id="lang-labelSocial">Social Security</label>
                         <select id="hasSocialCard" onchange="toggleSocialInput()">
@@ -180,10 +185,12 @@
                             <option value="Yes">Yes</option>
                         </select>
                     </div>
-                    <div id="socialNumDiv" style="display:none;"><label id="lang-labelSocialNo">Social Card Number</label><input type="text" id="socialNo"></div>
                 </div>
-                <label id="lang-labelPhoto">Worker Photo</label><input type="file" accept="image/*" onchange="previewImage(event)">
-                <button class="btn" id="saveBtn" style="width:100%; margin-top:10px;" onclick="handleSave()">Save Worker Data</button>
+                <div style="margin-top:15px;">
+                    <label id="lang-labelPhoto">Staff Photo</label>
+                    <input type="file" accept="image/*" onchange="previewImage(event)">
+                </div>
+                <button class="btn" id="saveBtn" style="width:100%; margin-top:15px;" onclick="handleSave()">Save Worker Data</button>
             </div>
         </section>
 
@@ -196,9 +203,7 @@
                     <option value="mm">မြန်မာဘာသာ</option>
                     <option value="th">ไทย</option>
                 </select>
-
                 <hr style="margin:25px 0; border:0; border-top:1px solid #eee;">
-                
                 <h3 style="margin-bottom:15px;"><i class="fas fa-lock"></i> <span id="lang-setAuth">Change Admin Login</span></h3>
                 <label id="lang-setNewUser">New User ID</label>
                 <input type="text" id="newUserId" placeholder="Admin ID">
@@ -209,13 +214,11 @@
         </section>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
     <script>
         const firebaseConfig = { apiKey: "AIzaSyDY8o3RX38-NlRkKeOC6gHWtfKXPcaxas", authDomain: "mgjen-8b4f5.firebaseapp.com", projectId: "mgjen-8b4f5", storageBucket: "mgjen-8b4f5.firebasestorage.app", messagingSenderId: "685152708249", appId: "1:685152708249:web:6334e940e8306f0ff6ba08" };
         firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
 
-        let allWorkers = [], currentBase64 = "", activeFilter = 'all', currentLang = 'en', fpInstances = {};
+        let allWorkers = [], currentBase64 = "", activeFilter = 'all', currentLang = 'en';
 
         const translations = {
             en: {
@@ -223,15 +226,15 @@
                 navAll: "All Workers", navAdd: "Register Worker", navSettings: "Settings", navLogout: "Logout",
                 mainTitle: "Passport Information List", statTotal: "Total Workers", statWpExp: "WP Expired", stat90Days: "90 Days Due", statPpExp: "PP Expired",
                 thPhoto: "Photo", thId: "Staff ID", thName: "Name", thType: "PP Type", thWp: "WP Expiry", th90: "90 Days", thAction: "Action",
-                labelStaffId: "Staff ID", labelName: "Full Name", labelPpType: "PP Type", labelPpNo: "Passport No", labelWpNo: "WP Number", labelOfWp: "Of WP", labelDob: "DOB", labelPpExp: "PP Expiry", labelWpExp: "WP Expiry", labelReport: "90 Days Report", labelSocial: "Social Security", labelSocialNo: "Social Card No", labelPhoto: "Photo", labelAge: "Age",
+                labelStaffId: "Staff ID", labelName: "Full Name", labelSex: "Sex", labelDob: "DOB", labelPpType: "PP Type", labelPpNo: "Passport No", labelPpExp: "PP Expiry", labelVisaExp: "Visa Expiry", labelWpNo: "WP Number", labelWpExp: "WP Expiry", labelOfWp: "Of WP", labelIdWork: "ID Work", labelReport: "90 Days Report", labelSsoNo: "SSO NO", labelSsoExp: "SSO EXPIRY", labelPinkNo: "PINK CARD NO", labelPinkExp: "PINK EXPIRY", labelSocial: "Social Security", labelPhoto: "Staff Photo", labelAge: "Age",
                 settingsTitle: "System Settings", setLang: "Language", setAuth: "Change Admin Login", setNewUser: "New User ID", setNewPass: "New Password", setUpdateBtn: "Update Credentials"
             },
             mm: {
                 loginTitle: "အက်ဒမင် ဝင်ရောက်ရန်", loginBtn: "လော့ဂ်အင်ဝင်ပါ", detailTitle: "အသေးစိတ်အချက်အလက်များ", closeBtn: "ပိတ်မည်",
                 navAll: "ဝန်ထမ်းအားလုံး", navAdd: "ဝန်ထမ်းသစ်သွင်းရန်", navSettings: "ချိန်ညှိချက်များ", navLogout: "ထွက်ရန်",
-                mainTitle: "Passport အချက်အလက်စာရင်း", statTotal: "စုစုပေါင်း", statWpExp: "WP သက်တမ်းကုန်", stat90Days: " ရက် ၉၀ တိုင်ရန်", statPpExp: "PP သက်တမ်းကုန်",
+                mainTitle: "Passport အချက်အလက်စာရင်း", statTotal: "စုစုပေါင်း", statWpExp: "WP သက်တမ်းကုန်", stat90Days: "ရက် ၉၀ တိုင်ရန်", statPpExp: "PP သက်တမ်းကုန်",
                 thPhoto: "ဓာတ်ပုံ", thId: "ကတ်နံပါတ်", thName: "အမည်", thType: "PP အမျိုးအစား", thWp: "WP သက်တမ်းကုန်", th90: "ရက် ၉၀", thAction: "ပြင်ဆင်",
-                labelStaffId: "ဝန်ထမ်းနံပါတ်", labelName: "နာမည်အပြည့်အစုံ", labelPpType: "ပတ်စပို့အမျိုးအစား", labelPpNo: "ပတ်စပို့နံပါတ်", labelWpNo: "WP နံပါတ်", labelOfWp: "WP အသေးစိတ်", labelDob: "မွေးသက္ကရာဇ်", labelPpExp: "PP သက်တမ်းကုန်ရက်", labelWpExp: "WP သက်တမ်းကုန်ရက်", labelReport: "ရက် ၉၀ အစီရင်ခံရက်", labelSocial: "ပက်ကန်ကတ်", labelSocialNo: "ပက်ကန်နံပါတ်", labelPhoto: "ဝန်ထမ်းဓာတ်ပုံ", labelAge: "အသက်",
+                labelStaffId: "ဝန်ထမ်းနံပါတ်", labelName: "နာမည်အပြည့်အစုံ", labelSex: "ကျား/မ", labelDob: "မွေးသက္ကရာဇ်", labelPpType: "ပတ်စပို့အမျိုးအစား", labelPpNo: "ပတ်စပို့နံပါတ်", labelPpExp: "PP သက်တမ်းကုန်ရက်", labelVisaExp: "ဗီဇာသက်တမ်းကုန်ရက်", labelWpNo: "WP နံပါတ်", labelWpExp: "WP သက်တမ်းကုန်ရက်", labelOfWp: "WP အသေးစိတ်", labelIdWork: "ID Work", labelReport: "ရက် ၉၀ အစီရင်ခံရက်", labelSsoNo: "SSO နံပါတ်", labelSsoExp: "SSO သက်တမ်းကုန်ရက်", labelPinkNo: "ပန်းရောင်ကတ်နံပါတ်", labelPinkExp: "ပန်းရောင်ကတ်သက်တမ်းကုန်ရက်", labelSocial: "ပက်ကန်ကတ်", labelPhoto: "ဝန်ထမ်းဓာတ်ပုံ", labelAge: "အသက်",
                 settingsTitle: "စနစ်ချိန်ညှိချက်များ", setLang: "ဘာသာစကား", setAuth: "အကောင့်ပြောင်းရန်", setNewUser: "ယူဆာအသစ်", setNewPass: "စကားဝှက်အသစ်", setUpdateBtn: "အချက်အလက်ပြင်မည်"
             },
             th: {
@@ -239,7 +242,7 @@
                 navAll: "พนักงานทั้งหมด", navAdd: "ลงทะเบียนพนักงาน", navSettings: "การตั้งค่า", navLogout: "ออกจากระบบ",
                 mainTitle: "รายการข้อมูลพาสปอร์ต", statTotal: "พนักงานทั้งหมด", statWpExp: "WP หมดอายุ", stat90Days: "ครบกำหนด 90 วัน", statPpExp: "PP หมดอายุ",
                 thPhoto: "รูปภาพ", thId: "รหัสพนักงาน", thName: "ชื่อ-นามสกุล", thType: "ประเภท PP", thWp: "WP หมดอายุ", th90: "รายงาน 90 วัน", thAction: "จัดการ",
-                labelStaffId: "รหัสพนักงาน", labelName: "ชื่อเต็ม", labelPpType: "ประเภทพาสปอร์ต", labelPpNo: "หมายเลขพาสปอร์ต", labelWpNo: "เลขที่ใบอนุญาต", labelOfWp: "รายละเอียด WP", labelDob: "วันเกิด", labelPpExp: "PP หมดอายุ", labelWpExp: "WP หมดอายุ", labelReport: "รายงาน 90 วัน", labelSocial: "ประกันสังคม", labelSocialNo: "เลขประกันสังคม", labelPhoto: "รูปพนักงาน", labelAge: "อายุ",
+                labelStaffId: "รหัสพนักงาน", labelName: "ชื่อเต็ม", labelSex: "เพศ", labelDob: "วันเกิด", labelPpType: "ประเภทพาสปอร์ต", labelPpNo: "หมายเลขพาสปอร์ต", labelPpExp: "PP หมดอายุ", labelVisaExp: "Visa หมดอายุ", labelWpNo: "เลขที่ใบอนุญาต", labelWpExp: "WP หมดอายุ", labelOfWp: "รายละเอียด WP", labelIdWork: "ID Work", labelReport: "รายงาน 90 วัน", labelSsoNo: "เลข SSO", labelSsoExp: "วันหมดอายุ SSO", labelPinkNo: "เลขบัตรชมพู", labelPinkExp: "วันหมดอายุบัตรชมพู", labelSocial: "ประกันสังคม", labelPhoto: "รูปพนักงาน", labelAge: "อายุ",
                 settingsTitle: "ตั้งค่าระบบ", setLang: "ภาษา", setAuth: "เปลี่ยนรหัสผ่าน", setNewUser: "ชื่อผู้ใช้ใหม่", setNewPass: "รหัสผ่านใหม่", setUpdateBtn: "อัปเดตข้อมูล"
             }
         };
@@ -275,16 +278,9 @@
         function handleLogout() { sessionStorage.clear(); location.reload(); }
 
         async function init() {
-            // Initialize Datepickers
-            const dateConfigs = { dateFormat: "d/m/Y", allowInput: true };
-            document.querySelectorAll(".datepicker").forEach(el => {
-                fpInstances[el.id] = flatpickr(el, dateConfigs);
-            });
-
             const savedLang = localStorage.getItem('mgjen_lang') || 'en';
             document.getElementById('languageSelect').value = savedLang;
             changeLanguage(savedLang);
-
             if(sessionStorage.getItem("isLoggedIn") !== "true") return;
             document.getElementById('loginOverlay').style.display = 'none';
             await loadData();
@@ -304,28 +300,16 @@
             renderTable();
         }
 
-        // Help convert DD/MM/YYYY to Date Object for comparison
-        function parseMyanmarDate(dateStr) {
-            if(!dateStr) return null;
-            if(dateStr.includes('/')) {
-                const [d, m, y] = dateStr.split('/');
-                return new Date(y, m - 1, d);
-            }
-            return new Date(dateStr);
-        }
-
         function getDaysDiff(dateStr) {
             if(!dateStr) return null;
             const today = new Date(); today.setHours(0,0,0,0);
-            const target = parseMyanmarDate(dateStr);
-            if(!target || isNaN(target)) return null;
+            const target = new Date(dateStr);
             return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
         }
 
         function calculateAge(dobStr) {
             if (!dobStr) return "-";
-            const birthDate = parseMyanmarDate(dobStr);
-            if(!birthDate) return "-";
+            const birthDate = new Date(dobStr);
             const today = new Date();
             let age = today.getFullYear() - birthDate.getFullYear();
             const m = today.getMonth() - birthDate.getMonth();
@@ -343,15 +327,15 @@
                 (typeFilter === "" || w.ppType === typeFilter)
             );
 
-            if(activeFilter === 'wpExp') filtered = filtered.filter(w => getDaysDiff(w.wpExpiry) !== null && getDaysDiff(w.wpExpiry) <= 7);
-            if(activeFilter === 'reportDue') filtered = filtered.filter(w => getDaysDiff(w.reportDate) !== null && getDaysDiff(w.reportDate) <= 7 && getDaysDiff(w.reportDate) >= 0);
-            if(activeFilter === 'ppExp') filtered = filtered.filter(w => getDaysDiff(w.ppExpiry) !== null && getDaysDiff(w.ppExpiry) <= 30);
+            if(activeFilter === 'wpExp') filtered = filtered.filter(w => getDaysDiff(w.wpExpiry) <= 7);
+            if(activeFilter === 'reportDue') filtered = filtered.filter(w => getDaysDiff(w.reportDate) <= 7 && getDaysDiff(w.reportDate) >= 0);
+            if(activeFilter === 'ppExp') filtered = filtered.filter(w => getDaysDiff(w.ppExpiry) <= 30);
 
             tbody.innerHTML = filtered.map(w => {
                 const wpDiff = getDaysDiff(w.wpExpiry);
                 const rDiff = getDaysDiff(w.reportDate);
-                const wpStatus = wpDiff === null ? 'badge-info' : wpDiff < 0 ? 'badge-danger' : wpDiff <= 7 ? 'badge-warning' : 'badge-success';
-                const rStatus = rDiff === null ? 'badge-info' : rDiff < 0 ? 'badge-danger' : rDiff <= 7 ? 'badge-warning' : 'badge-success';
+                const wpStatus = wpDiff < 0 ? 'badge-danger' : wpDiff <= 7 ? 'badge-warning' : 'badge-success';
+                const rStatus = rDiff < 0 ? 'badge-danger' : rDiff <= 7 ? 'badge-warning' : 'badge-success';
                 const wpColor = wpDiff <= 7 ? 'color: var(--danger);' : 'color: var(--success);';
                 const rColor = rDiff <= 7 ? 'color: var(--danger);' : 'color: var(--success);';
 
@@ -360,8 +344,8 @@
                     <td><span class="badge badge-info">${w.staffId || '-'}</span></td>
                     <td><strong style="cursor:pointer; color:var(--primary);" onclick="viewDetail('${w.id}')">${w.name}</strong></td>
                     <td><span class="badge badge-pp">${w.ppType}</span></td>
-                    <td><span class="badge ${wpStatus}">${w.wpExpiry || '-'}</span><span class="days-left" style="${wpColor}">${wpDiff === null ? '' : wpDiff < 0 ? 'Exp' : wpDiff + 'd left'}</span></td>
-                    <td><span class="badge ${rStatus}">${w.reportDate || '-'}</span><span class="days-left" style="${rColor}">${rDiff === null ? '' : rDiff < 0 ? 'Exp' : rDiff + 'd left'}</span></td>
+                    <td><span class="badge ${wpStatus}">${w.wpExpiry || '-'}</span><span class="days-left" style="${wpColor}">${wpDiff < 0 ? 'Exp' : wpDiff + 'd left'}</span></td>
+                    <td><span class="badge ${rStatus}">${w.reportDate || '-'}</span><span class="days-left" style="${rColor}">${rDiff < 0 ? 'Exp' : rDiff + 'd left'}</span></td>
                     <td><i class="fas fa-edit" style="color:var(--warning);cursor:pointer;margin-right:10px" onclick="editWorker('${w.id}')"></i><i class="fas fa-trash" style="color:var(--danger);cursor:pointer" onclick="deleteWorker('${w.id}')"></i></td>
                 </tr>`;
             }).join('');
@@ -375,29 +359,32 @@
 
             modalBody.innerHTML = `
                 <div style="text-align:center; margin-bottom:20px;">
-                    <img src="${w.photo || 'https://via.placeholder.com/100'}" style="width:100px;height:100px;border-radius:15px;object-fit:cover;border:3px solid var(--primary);">
+                    <img src="${w.photo || 'https://via.placeholder.com/120'}" style="width:120px;height:120px;border-radius:15px;object-fit:cover;border:3px solid var(--primary);">
                 </div>
-                <div class="detail-row"><span class="detail-label">${lang.labelName}</span><span class="detail-value">${w.name}</span></div>
-                <div class="detail-row"><span class="detail-label">${lang.labelAge}</span><span class="detail-value" style="color:var(--primary); font-size:16px;">${age} Years</span></div>
+                <div class="detail-row"><span class="detail-label">${lang.labelName}</span><span class="detail-value">${w.name} (${w.sex || '-'})</span></div>
+                <div class="detail-row"><span class="detail-label">${lang.labelAge}</span><span class="detail-value" style="color:var(--primary);">${age} Years</span></div>
                 <div class="detail-row"><span class="detail-label">${lang.labelStaffId}</span><span class="detail-value">${w.staffId || '-'}</span></div>
                 <div class="detail-row"><span class="detail-label">${lang.labelPpType}</span><span class="detail-value">${w.ppType}</span></div>
                 <div class="detail-row"><span class="detail-label">${lang.labelPpNo}</span><span class="detail-value">${w.passportNo}</span></div>
-                <div class="detail-row"><span class="detail-label">${lang.labelWpNo}</span><span class="detail-value">${w.wpNumber || '-'}</span></div>
-                <div class="detail-row"><span class="detail-label">${lang.labelOfWp}</span><span class="detail-value">${w.ofWorkPermit || '-'}</span></div>
-                <div class="detail-row"><span class="detail-label">${lang.labelDob}</span><span class="detail-value">${w.dob || '-'}</span></div>
                 <div class="detail-row"><span class="detail-label">${lang.labelPpExp}</span><span class="detail-value">${w.ppExpiry || '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">${lang.labelVisaExp}</span><span class="detail-value">${w.visaExpiry || '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">${lang.labelWpNo}</span><span class="detail-value">${w.wpNumber || '-'}</span></div>
                 <div class="detail-row"><span class="detail-label">${lang.labelWpExp}</span><span class="detail-value">${w.wpExpiry || '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">${lang.labelIdWork}</span><span class="detail-value">${w.idWork || '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">${lang.labelSsoNo}</span><span class="detail-value">${w.ssoNo || '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">${lang.labelSsoExp}</span><span class="detail-value">${w.ssoExpiry || '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">${lang.labelPinkNo}</span><span class="detail-value">${w.pinkCardNo || '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">${lang.labelPinkExp}</span><span class="detail-value">${w.pinkExpiry || '-'}</span></div>
                 <div class="detail-row"><span class="detail-label">${lang.labelReport}</span><span class="detail-value">${w.reportDate || '-'}</span></div>
-                <div class="detail-row"><span class="detail-label">${lang.labelSocialNo}</span><span class="detail-value">${w.socialNo || 'No'}</span></div>
             `;
             document.getElementById('detailModal').style.display = 'flex';
         }
 
         function updateStats() {
             document.getElementById('totalCount').innerText = allWorkers.length;
-            document.getElementById('wpExpCount').innerText = allWorkers.filter(w => getDaysDiff(w.wpExpiry) !== null && getDaysDiff(w.wpExpiry) <= 7).length;
-            document.getElementById('reportDueCount').innerText = allWorkers.filter(w => getDaysDiff(w.reportDate) !== null && getDaysDiff(w.reportDate) <= 7 && getDaysDiff(w.reportDate) >= 0).length;
-            document.getElementById('ppCount').innerText = allWorkers.filter(w => getDaysDiff(w.ppExpiry) !== null && getDaysDiff(w.ppExpiry) <= 30).length;
+            document.getElementById('wpExpCount').innerText = allWorkers.filter(w => getDaysDiff(w.wpExpiry) <= 7).length;
+            document.getElementById('reportDueCount').innerText = allWorkers.filter(w => getDaysDiff(w.reportDate) <= 7 && getDaysDiff(w.reportDate) >= 0).length;
+            document.getElementById('ppCount').innerText = allWorkers.filter(w => getDaysDiff(w.ppExpiry) <= 30).length;
         }
 
         window.closeModal = function() { document.getElementById('detailModal').style.display = 'none'; }
@@ -407,86 +394,72 @@
             const data = { 
                 staffId: document.getElementById('staffId').value, 
                 name: document.getElementById('name').value, 
+                sex: document.getElementById('sex').value,
                 ppType: document.getElementById('ppType').value, 
                 passportNo: document.getElementById('passportNo').value, 
                 wpNumber: document.getElementById('wpNumber').value || "", 
                 ofWorkPermit: document.getElementById('ofWorkPermit').value || "", 
                 dob: document.getElementById('dob').value, 
                 ppExpiry: document.getElementById('ppExpiry').value, 
+                visaExpiry: document.getElementById('visaExpiry').value || "",
                 wpExpiry: document.getElementById('wpExpiry').value, 
+                idWork: document.getElementById('idWork').value || "",
                 reportDate: document.getElementById('reportDate').value, 
+                ssoNo: document.getElementById('ssoNo').value || "",
+                ssoExpiry: document.getElementById('ssoExpiry').value || "",
+                pinkCardNo: document.getElementById('pinkCardNo').value || "",
+                pinkExpiry: document.getElementById('pinkExpiry').value || "",
                 hasSocialCard: document.getElementById('hasSocialCard').value, 
-                socialNo: document.getElementById('socialNo').value || "", 
                 photo: currentBase64 
             };
-            
-            if(!data.name || !data.passportNo) return alert("Name and Passport No are required!");
-            
             btn.disabled = true; 
             try { 
                 id ? await db.collection("workers_pps_final").doc(id).update(data) : await db.collection("workers_pps_final").add(data); 
-                alert("Success!"); 
-                await loadData(); 
-                switchTab('list'); 
-                resetForm(); 
-            } catch(e) { 
-                alert("Error saving data!"); 
-            } 
+                alert("Success!"); loadData(); switchTab('list'); resetForm(); 
+            } catch(e) { alert("Error!"); } 
             btn.disabled = false;
         }
 
         function editWorker(id) {
-            const w = allWorkers.find(x => x.id === id); 
-            document.getElementById('editId').value = id;
+            const w = allWorkers.find(x => x.id === id); document.getElementById('editId').value = id;
             document.getElementById('staffId').value = w.staffId || ""; 
             document.getElementById('name').value = w.name;
+            document.getElementById('sex').value = w.sex || "Male";
             document.getElementById('ppType').value = w.ppType; 
             document.getElementById('passportNo').value = w.passportNo;
             document.getElementById('wpNumber').value = w.wpNumber || ""; 
             document.getElementById('ofWorkPermit').value = w.ofWorkPermit || "";
-            
-            // Set values to Flatpickr
-            fpInstances['dob'].setDate(w.dob || "");
-            fpInstances['ppExpiry'].setDate(w.ppExpiry || "");
-            fpInstances['wpExpiry'].setDate(w.wpExpiry || "");
-            fpInstances['reportDate'].setDate(w.reportDate || "");
-
+            document.getElementById('dob').value = w.dob || ""; 
+            document.getElementById('ppExpiry').value = w.ppExpiry;
+            document.getElementById('visaExpiry').value = w.visaExpiry || "";
+            document.getElementById('wpExpiry').value = w.wpExpiry; 
+            document.getElementById('idWork').value = w.idWork || "";
+            document.getElementById('reportDate').value = w.reportDate;
+            document.getElementById('ssoNo').value = w.ssoNo || "";
+            document.getElementById('ssoExpiry').value = w.ssoExpiry || "";
+            document.getElementById('pinkCardNo').value = w.pinkCardNo || "";
+            document.getElementById('pinkExpiry').value = w.pinkExpiry || "";
             document.getElementById('hasSocialCard').value = w.hasSocialCard; 
-            document.getElementById('socialNo').value = w.socialNo || "";
-            
-            toggleSocialInput(); 
-            currentBase64 = w.photo; 
-            switchTab('add'); 
-            document.getElementById('formHeader').innerText = "Edit Worker";
+            currentBase64 = w.photo; switchTab('add'); document.getElementById('formHeader').innerText = "Edit Worker";
         }
 
         async function deleteWorker(id) { if(confirm("Delete?")) { await db.collection("workers_pps_final").doc(id).delete(); loadData(); } }
         
         function switchTab(t) { 
-            document.querySelectorAll('section').forEach(s => s.classList.remove('active')); 
-            document.getElementById(t + '-tab').classList.add('active'); 
-            document.querySelectorAll('.sidebar li').forEach(li => li.classList.remove('active')); 
-            if(document.getElementById('btn-' + t)) document.getElementById('btn-' + t).classList.add('active');
-            if(t === 'add' && !document.getElementById('editId').value) resetForm();
+            document.querySelectorAll('section').forEach(s => s.classList.remove('active')); document.getElementById(t + '-tab').classList.add('active'); 
+            document.querySelectorAll('.sidebar li').forEach(li => li.classList.remove('active')); document.getElementById('btn-' + t).classList.add('active');
         }
-
-        function toggleSocialInput() { document.getElementById('socialNumDiv').style.display = (document.getElementById('hasSocialCard').value === "Yes") ? "block" : "none"; }
-        
+        function toggleSocialInput() { /* Keeping this for original logic compatibility */ }
         function resetForm() { 
             document.getElementById('editId').value = ""; 
             currentBase64 = ""; 
             document.getElementById('formHeader').innerText = "Register Worker"; 
-            document.querySelectorAll('#add-tab input:not([type=file])').forEach(i => i.value = "");
-            document.querySelectorAll(".datepicker").forEach(el => fpInstances[el.id].clear());
+            document.querySelectorAll('#add-tab input').forEach(i => i.value = "");
         }
-
         function previewImage(e) { 
-            const file = e.target.files[0];
-            if(file) {
-                const r = new FileReader(); 
-                r.onload = () => currentBase64 = r.result; 
-                r.readAsDataURL(file); 
-            }
+            const r = new FileReader(); 
+            r.onload = () => { currentBase64 = r.result; console.log("Photo loaded."); }; 
+            r.readAsDataURL(e.target.files[0]); 
         }
         init();
     </script>
