@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MGJEN Worker HR - Document Tracking</title>
+    <title> HR Worker HR - Document Tracking</title>
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/912/912214.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-firestore-compat.js"></script>
     <style>
@@ -19,7 +22,6 @@
         .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
         
         .sidebar { width: 250px; background: var(--sidebar); color: white; padding: 20px; flex-shrink: 0; }
-        /* Sidebar Logo Style */
         .sidebar-header { text-align: center; margin-bottom: 25px; border-bottom: 1px solid #334155; padding-bottom: 20px; }
         .sidebar-header img { width: 50px; height: 50px; margin-bottom: 10px; filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.5)); }
         .sidebar h2 { color: #38bdf8; font-size: 1.2rem; }
@@ -39,7 +41,7 @@
         td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
         
         .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; background: var(--primary); }
-        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; background: white; }
         label { font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 5px; display: block; }
         
         section { display: none; }
@@ -60,6 +62,9 @@
         .detail-label { color: #64748b; font-size: 13px; }
         .detail-value { font-weight: 600; font-size: 13px; color: #1e293b; }
         .close-modal { position: absolute; top: 15px; right: 15px; cursor: pointer; font-size: 20px; color: #94a3b8; }
+        
+        /* Date Input Specific Style */
+        .flatpickr-input { background-color: white !important; }
     </style>
 </head>
 <body>
@@ -162,10 +167,12 @@
                     <div><label id="lang-labelPpNo">Passport Number</label><input type="text" id="passportNo"></div>
                     <div><label id="lang-labelWpNo">WP Number</label><input type="text" id="wpNumber"></div>
                     <div><label id="lang-labelOfWp">Of work permit</label><input type="text" id="ofWorkPermit"></div>
-                    <div><label id="lang-labelDob">Date of Birth</label><input type="date" id="dob"></div>
-                    <div><label id="lang-labelPpExp">Passport Expiry</label><input type="date" id="ppExpiry"></div>
-                    <div><label id="lang-labelWpExp">WP Expiry Date</label><input type="date" id="wpExpiry"></div>
-                    <div><label id="lang-labelReport">90 Days Report Date</label><input type="date" id="reportDate"></div>
+                    
+                    <div><label id="lang-labelDob">Date of Birth</label><input type="text" id="dob" class="datepicker" placeholder="DD/MM/YYYY"></div>
+                    <div><label id="lang-labelPpExp">Passport Expiry</label><input type="text" id="ppExpiry" class="datepicker" placeholder="DD/MM/YYYY"></div>
+                    <div><label id="lang-labelWpExp">WP Expiry Date</label><input type="text" id="wpExpiry" class="datepicker" placeholder="DD/MM/YYYY"></div>
+                    <div><label id="lang-labelReport">90 Days Report Date</label><input type="text" id="reportDate" class="datepicker" placeholder="DD/MM/YYYY"></div>
+                    
                     <div>
                         <label id="lang-labelSocial">Social Security</label>
                         <select id="hasSocialCard" onchange="toggleSocialInput()">
@@ -202,11 +209,13 @@
         </section>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
     <script>
         const firebaseConfig = { apiKey: "AIzaSyDY8o3RX38-NlRkKeOC6gHWtfKXPcaxas", authDomain: "mgjen-8b4f5.firebaseapp.com", projectId: "mgjen-8b4f5", storageBucket: "mgjen-8b4f5.firebasestorage.app", messagingSenderId: "685152708249", appId: "1:685152708249:web:6334e940e8306f0ff6ba08" };
         firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
 
-        let allWorkers = [], currentBase64 = "", activeFilter = 'all', currentLang = 'en';
+        let allWorkers = [], currentBase64 = "", activeFilter = 'all', currentLang = 'en', fpInstances = {};
 
         const translations = {
             en: {
@@ -266,6 +275,12 @@
         function handleLogout() { sessionStorage.clear(); location.reload(); }
 
         async function init() {
+            // Initialize Datepickers
+            const dateConfigs = { dateFormat: "d/m/Y", allowInput: true };
+            document.querySelectorAll(".datepicker").forEach(el => {
+                fpInstances[el.id] = flatpickr(el, dateConfigs);
+            });
+
             const savedLang = localStorage.getItem('mgjen_lang') || 'en';
             document.getElementById('languageSelect').value = savedLang;
             changeLanguage(savedLang);
@@ -289,16 +304,28 @@
             renderTable();
         }
 
+        // Help convert DD/MM/YYYY to Date Object for comparison
+        function parseMyanmarDate(dateStr) {
+            if(!dateStr) return null;
+            if(dateStr.includes('/')) {
+                const [d, m, y] = dateStr.split('/');
+                return new Date(y, m - 1, d);
+            }
+            return new Date(dateStr);
+        }
+
         function getDaysDiff(dateStr) {
             if(!dateStr) return null;
             const today = new Date(); today.setHours(0,0,0,0);
-            const target = new Date(dateStr);
+            const target = parseMyanmarDate(dateStr);
+            if(!target || isNaN(target)) return null;
             return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
         }
 
         function calculateAge(dobStr) {
             if (!dobStr) return "-";
-            const birthDate = new Date(dobStr);
+            const birthDate = parseMyanmarDate(dobStr);
+            if(!birthDate) return "-";
             const today = new Date();
             let age = today.getFullYear() - birthDate.getFullYear();
             const m = today.getMonth() - birthDate.getMonth();
@@ -316,15 +343,15 @@
                 (typeFilter === "" || w.ppType === typeFilter)
             );
 
-            if(activeFilter === 'wpExp') filtered = filtered.filter(w => getDaysDiff(w.wpExpiry) <= 7);
-            if(activeFilter === 'reportDue') filtered = filtered.filter(w => getDaysDiff(w.reportDate) <= 7 && getDaysDiff(w.reportDate) >= 0);
-            if(activeFilter === 'ppExp') filtered = filtered.filter(w => getDaysDiff(w.ppExpiry) <= 30);
+            if(activeFilter === 'wpExp') filtered = filtered.filter(w => getDaysDiff(w.wpExpiry) !== null && getDaysDiff(w.wpExpiry) <= 7);
+            if(activeFilter === 'reportDue') filtered = filtered.filter(w => getDaysDiff(w.reportDate) !== null && getDaysDiff(w.reportDate) <= 7 && getDaysDiff(w.reportDate) >= 0);
+            if(activeFilter === 'ppExp') filtered = filtered.filter(w => getDaysDiff(w.ppExpiry) !== null && getDaysDiff(w.ppExpiry) <= 30);
 
             tbody.innerHTML = filtered.map(w => {
                 const wpDiff = getDaysDiff(w.wpExpiry);
                 const rDiff = getDaysDiff(w.reportDate);
-                const wpStatus = wpDiff < 0 ? 'badge-danger' : wpDiff <= 7 ? 'badge-warning' : 'badge-success';
-                const rStatus = rDiff < 0 ? 'badge-danger' : rDiff <= 7 ? 'badge-warning' : 'badge-success';
+                const wpStatus = wpDiff === null ? 'badge-info' : wpDiff < 0 ? 'badge-danger' : wpDiff <= 7 ? 'badge-warning' : 'badge-success';
+                const rStatus = rDiff === null ? 'badge-info' : rDiff < 0 ? 'badge-danger' : rDiff <= 7 ? 'badge-warning' : 'badge-success';
                 const wpColor = wpDiff <= 7 ? 'color: var(--danger);' : 'color: var(--success);';
                 const rColor = rDiff <= 7 ? 'color: var(--danger);' : 'color: var(--success);';
 
@@ -333,8 +360,8 @@
                     <td><span class="badge badge-info">${w.staffId || '-'}</span></td>
                     <td><strong style="cursor:pointer; color:var(--primary);" onclick="viewDetail('${w.id}')">${w.name}</strong></td>
                     <td><span class="badge badge-pp">${w.ppType}</span></td>
-                    <td><span class="badge ${wpStatus}">${w.wpExpiry || '-'}</span><span class="days-left" style="${wpColor}">${wpDiff < 0 ? 'Exp' : wpDiff + 'd left'}</span></td>
-                    <td><span class="badge ${rStatus}">${w.reportDate || '-'}</span><span class="days-left" style="${rColor}">${rDiff < 0 ? 'Exp' : rDiff + 'd left'}</span></td>
+                    <td><span class="badge ${wpStatus}">${w.wpExpiry || '-'}</span><span class="days-left" style="${wpColor}">${wpDiff === null ? '' : wpDiff < 0 ? 'Exp' : wpDiff + 'd left'}</span></td>
+                    <td><span class="badge ${rStatus}">${w.reportDate || '-'}</span><span class="days-left" style="${rColor}">${rDiff === null ? '' : rDiff < 0 ? 'Exp' : rDiff + 'd left'}</span></td>
                     <td><i class="fas fa-edit" style="color:var(--warning);cursor:pointer;margin-right:10px" onclick="editWorker('${w.id}')"></i><i class="fas fa-trash" style="color:var(--danger);cursor:pointer" onclick="deleteWorker('${w.id}')"></i></td>
                 </tr>`;
             }).join('');
@@ -368,35 +395,99 @@
 
         function updateStats() {
             document.getElementById('totalCount').innerText = allWorkers.length;
-            document.getElementById('wpExpCount').innerText = allWorkers.filter(w => getDaysDiff(w.wpExpiry) <= 7).length;
-            document.getElementById('reportDueCount').innerText = allWorkers.filter(w => getDaysDiff(w.reportDate) <= 7 && getDaysDiff(w.reportDate) >= 0).length;
-            document.getElementById('ppCount').innerText = allWorkers.filter(w => getDaysDiff(w.ppExpiry) <= 30).length;
+            document.getElementById('wpExpCount').innerText = allWorkers.filter(w => getDaysDiff(w.wpExpiry) !== null && getDaysDiff(w.wpExpiry) <= 7).length;
+            document.getElementById('reportDueCount').innerText = allWorkers.filter(w => getDaysDiff(w.reportDate) !== null && getDaysDiff(w.reportDate) <= 7 && getDaysDiff(w.reportDate) >= 0).length;
+            document.getElementById('ppCount').innerText = allWorkers.filter(w => getDaysDiff(w.ppExpiry) !== null && getDaysDiff(w.ppExpiry) <= 30).length;
         }
 
         window.closeModal = function() { document.getElementById('detailModal').style.display = 'none'; }
+        
         async function handleSave() {
             const btn = document.getElementById('saveBtn'); const id = document.getElementById('editId').value;
-            const data = { staffId: document.getElementById('staffId').value, name: document.getElementById('name').value, ppType: document.getElementById('ppType').value, passportNo: document.getElementById('passportNo').value, wpNumber: document.getElementById('wpNumber').value || "", ofWorkPermit: document.getElementById('ofWorkPermit').value || "", dob: document.getElementById('dob').value, ppExpiry: document.getElementById('ppExpiry').value, wpExpiry: document.getElementById('wpExpiry').value, reportDate: document.getElementById('reportDate').value, hasSocialCard: document.getElementById('hasSocialCard').value, socialNo: document.getElementById('socialNo').value || "", photo: currentBase64 };
-            btn.disabled = true; try { id ? await db.collection("workers_pps_final").doc(id).update(data) : await db.collection("workers_pps_final").add(data); alert("Success!"); loadData(); switchTab('list'); resetForm(); } catch(e) { alert("Error!"); } btn.disabled = false;
+            const data = { 
+                staffId: document.getElementById('staffId').value, 
+                name: document.getElementById('name').value, 
+                ppType: document.getElementById('ppType').value, 
+                passportNo: document.getElementById('passportNo').value, 
+                wpNumber: document.getElementById('wpNumber').value || "", 
+                ofWorkPermit: document.getElementById('ofWorkPermit').value || "", 
+                dob: document.getElementById('dob').value, 
+                ppExpiry: document.getElementById('ppExpiry').value, 
+                wpExpiry: document.getElementById('wpExpiry').value, 
+                reportDate: document.getElementById('reportDate').value, 
+                hasSocialCard: document.getElementById('hasSocialCard').value, 
+                socialNo: document.getElementById('socialNo').value || "", 
+                photo: currentBase64 
+            };
+            
+            if(!data.name || !data.passportNo) return alert("Name and Passport No are required!");
+            
+            btn.disabled = true; 
+            try { 
+                id ? await db.collection("workers_pps_final").doc(id).update(data) : await db.collection("workers_pps_final").add(data); 
+                alert("Success!"); 
+                await loadData(); 
+                switchTab('list'); 
+                resetForm(); 
+            } catch(e) { 
+                alert("Error saving data!"); 
+            } 
+            btn.disabled = false;
         }
+
         function editWorker(id) {
-            const w = allWorkers.find(x => x.id === id); document.getElementById('editId').value = id;
-            document.getElementById('staffId').value = w.staffId || ""; document.getElementById('name').value = w.name;
-            document.getElementById('ppType').value = w.ppType; document.getElementById('passportNo').value = w.passportNo;
-            document.getElementById('wpNumber').value = w.wpNumber || ""; document.getElementById('ofWorkPermit').value = w.ofWorkPermit || "";
-            document.getElementById('dob').value = w.dob || ""; document.getElementById('ppExpiry').value = w.ppExpiry;
-            document.getElementById('wpExpiry').value = w.wpExpiry; document.getElementById('reportDate').value = w.reportDate;
-            document.getElementById('hasSocialCard').value = w.hasSocialCard; document.getElementById('socialNo').value = w.socialNo || "";
-            toggleSocialInput(); currentBase64 = w.photo; switchTab('add'); document.getElementById('formHeader').innerText = "Edit Worker";
+            const w = allWorkers.find(x => x.id === id); 
+            document.getElementById('editId').value = id;
+            document.getElementById('staffId').value = w.staffId || ""; 
+            document.getElementById('name').value = w.name;
+            document.getElementById('ppType').value = w.ppType; 
+            document.getElementById('passportNo').value = w.passportNo;
+            document.getElementById('wpNumber').value = w.wpNumber || ""; 
+            document.getElementById('ofWorkPermit').value = w.ofWorkPermit || "";
+            
+            // Set values to Flatpickr
+            fpInstances['dob'].setDate(w.dob || "");
+            fpInstances['ppExpiry'].setDate(w.ppExpiry || "");
+            fpInstances['wpExpiry'].setDate(w.wpExpiry || "");
+            fpInstances['reportDate'].setDate(w.reportDate || "");
+
+            document.getElementById('hasSocialCard').value = w.hasSocialCard; 
+            document.getElementById('socialNo').value = w.socialNo || "";
+            
+            toggleSocialInput(); 
+            currentBase64 = w.photo; 
+            switchTab('add'); 
+            document.getElementById('formHeader').innerText = "Edit Worker";
         }
+
         async function deleteWorker(id) { if(confirm("Delete?")) { await db.collection("workers_pps_final").doc(id).delete(); loadData(); } }
+        
         function switchTab(t) { 
-            document.querySelectorAll('section').forEach(s => s.classList.remove('active')); document.getElementById(t + '-tab').classList.add('active'); 
-            document.querySelectorAll('.sidebar li').forEach(li => li.classList.remove('active')); document.getElementById('btn-' + t).classList.add('active');
+            document.querySelectorAll('section').forEach(s => s.classList.remove('active')); 
+            document.getElementById(t + '-tab').classList.add('active'); 
+            document.querySelectorAll('.sidebar li').forEach(li => li.classList.remove('active')); 
+            if(document.getElementById('btn-' + t)) document.getElementById('btn-' + t).classList.add('active');
+            if(t === 'add' && !document.getElementById('editId').value) resetForm();
         }
+
         function toggleSocialInput() { document.getElementById('socialNumDiv').style.display = (document.getElementById('hasSocialCard').value === "Yes") ? "block" : "none"; }
-        function resetForm() { document.getElementById('editId').value = ""; currentBase64 = ""; document.getElementById('formHeader').innerText = "Register Worker"; }
-        function previewImage(e) { const r = new FileReader(); r.onload = () => currentBase64 = r.result; r.readAsDataURL(e.target.files[0]); }
+        
+        function resetForm() { 
+            document.getElementById('editId').value = ""; 
+            currentBase64 = ""; 
+            document.getElementById('formHeader').innerText = "Register Worker"; 
+            document.querySelectorAll('#add-tab input:not([type=file])').forEach(i => i.value = "");
+            document.querySelectorAll(".datepicker").forEach(el => fpInstances[el.id].clear());
+        }
+
+        function previewImage(e) { 
+            const file = e.target.files[0];
+            if(file) {
+                const r = new FileReader(); 
+                r.onload = () => currentBase64 = r.result; 
+                r.readAsDataURL(file); 
+            }
+        }
         init();
     </script>
 </body>
