@@ -22,13 +22,11 @@
         .sidebar-header { text-align: center; margin-bottom: 25px; border-bottom: 1px solid #334155; padding-bottom: 20px; }
         .sidebar-header img { width: 50px; height: 50px; margin-bottom: 10px; }
         .sidebar h2 { color: #38bdf8; font-size: 1.2rem; }
-        
         .sidebar li { list-style: none; padding: 12px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; }
         .sidebar li:hover, .sidebar li.active { background: var(--primary); }
         
         .main { flex: 1; padding: 25px; overflow-y: auto; }
         .card { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
-        
         .stat-card { cursor: pointer; transition: 0.3s; border: 2px solid transparent; }
         .stat-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-color: var(--primary); }
         .stat-card.active-filter { border-color: var(--primary); background: #eff6ff; }
@@ -39,7 +37,7 @@
         
         .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; background: var(--primary); }
         input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; }
-        label { font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 5px; display: block; }
+        label { font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 3px; display: block; }
         
         section { display: none; }
         section.active { display: block; animation: fadeIn 0.3s ease; }
@@ -50,22 +48,21 @@
         .badge-success { background: #dcfce7; color: #166534; }
         .badge-warning { background: #fef3c7; color: #92400e; }
         .badge-info { background: #e0f2fe; color: #0369a1; }
-        .badge-pp { background: #f3e8ff; color: #6b21a8; }
-        .days-left { font-size: 10px; display: block; margin-top: 2px; font-weight: bold; }
 
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .modal-content { background: white; padding: 25px; border-radius: 15px; width: 500px; position: relative; max-height: 90vh; overflow-y: auto; }
-        .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
         .detail-label { color: #64748b; font-size: 13px; }
         .detail-value { font-weight: 600; font-size: 13px; color: #1e293b; }
-        .close-modal { position: absolute; top: 15px; right: 15px; cursor: pointer; font-size: 20px; color: #94a3b8; }
+        .close-modal { position: absolute; top: 15px; right: 20px; cursor: pointer; font-size: 24px; color: #94a3b8; }
+        #imgPreview { width: 100px; height: 100px; border-radius: 10px; object-fit: cover; margin-top: 10px; display: none; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
 
     <div id="loginOverlay">
         <div class="login-box">
-            <img src="https://cdn-icons-png.flaticon.com/512/912/912214.png" alt="Admin Icon">
+            <img src="https://cdn-icons-png.flaticon.com/512/912/912214.png">
             <h2 id="lang-loginTitle">Worker Admin</h2><br>
             <input type="text" id="loginUser" placeholder="User ID">
             <input type="password" id="loginPass" placeholder="Password">
@@ -76,140 +73,90 @@
     <div id="detailModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal()">&times;</span>
-            <h3 style="margin-bottom: 20px; color: var(--primary);" id="lang-detailTitle">Worker Full Details</h3>
+            <h3 style="margin-bottom: 20px; color: var(--primary); text-align: center;">Full Profile Details</h3>
             <div id="modalBody"></div>
-            <button class="btn" style="width:100%; margin-top:20px;" onclick="closeModal()" id="lang-closeBtn">Close</button>
+            <button class="btn" style="width:100%; margin-top:20px; background: #64748b;" onclick="closeModal()">Close</button>
         </div>
     </div>
 
     <div class="sidebar">
-        <div class="sidebar-header">
-            <img src="https://cdn-icons-png.flaticon.com/512/912/912214.png" alt="Logo">
-            <h2> HR </h2>
-        </div>
+        <div class="sidebar-header"><img src="https://cdn-icons-png.flaticon.com/512/912/912214.png"><h2> HR </h2></div>
         <ul>
             <li class="active" id="btn-list" onclick="switchTab('list')"><i class="fas fa-users"></i> <span id="lang-navAll">All Workers</span></li>
             <li id="btn-add" onclick="switchTab('add')"><i class="fas fa-user-plus"></i> <span id="lang-navAdd">Register Worker</span></li>
             <li id="btn-settings" onclick="switchTab('settings')"><i class="fas fa-cog"></i> <span id="lang-navSettings">Settings</span></li>
+            <li id="btn-about" onclick="switchTab('about')"><i class="fas fa-info-circle"></i> <span id="lang-navAbout">About System</span></li>
             <li onclick="handleLogout()" style="color:var(--danger); margin-top: 20px;"><i class="fas fa-sign-out-alt"></i> <span id="lang-navLogout">Logout</span></li>
         </ul>
     </div>
 
     <div class="main">
         <section id="list-tab" class="active">
-            <header style="margin-bottom:20px;">
-                <h1 id="lang-mainTitle">Passport Information List</h1>
-            </header>
-            
+            <header style="margin-bottom:20px;"><h1 id="lang-mainTitle">Passport Information List</h1></header>
             <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:15px; margin-bottom:20px;">
-                <div class="card stat-card active-filter" id="stat-all" onclick="filterByStatus('all')">
-                    <h3 id="lang-statTotal">Total Workers</h3>
-                    <p id="totalCount" style="font-size: 24px; font-weight: bold;">0</p>
-                </div>
-                <div class="card stat-card" id="stat-wp" onclick="filterByStatus('wpExp')" style="color:var(--danger)">
-                    <h3 id="lang-statWpExp">WP Expired</h3>
-                    <p id="wpExpCount" style="font-size: 24px; font-weight: bold;">0</p>
-                </div>
-                <div class="card stat-card" id="stat-report" onclick="filterByStatus('reportDue')" style="color:var(--warning)">
-                    <h3 id="lang-stat90Days">90 Days Due</h3>
-                    <p id="reportDueCount" style="font-size: 24px; font-weight: bold;">0</p>
-                </div>
-                <div class="card stat-card" id="stat-pp" onclick="filterByStatus('ppExp')" style="color:var(--primary)">
-                    <h3 id="lang-statPpExp">PP Expired</h3>
-                    <p id="ppCount" style="font-size: 24px; font-weight: bold;">0</p>
-                </div>
+                <div class="card stat-card active-filter" id="stat-all" onclick="filterByStatus('all')"><h3 id="lang-statTotal">Total</h3><p id="totalCount" style="font-size:24px; font-weight:bold;">0</p></div>
+                <div class="card stat-card" id="stat-wp" onclick="filterByStatus('wpExp')" style="color:var(--danger)"><h3 id="lang-statWpExp">WP Exp</h3><p id="wpExpCount" style="font-size:24px; font-weight:bold;">0</p></div>
+                <div class="card stat-card" id="stat-report" onclick="filterByStatus('reportDue')" style="color:var(--warning)"><h3 id="lang-stat90Days">90 Days</h3><p id="reportDueCount" style="font-size:24px; font-weight:bold;">0</p></div>
+                <div class="card stat-card" id="stat-pp" onclick="filterByStatus('ppExp')" style="color:var(--primary)"><h3 id="lang-statPpExp">PP Exp</h3><p id="ppCount" style="font-size:24px; font-weight:bold;">0</p></div>
             </div>
-
             <div class="card">
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <input type="text" id="searchBox" placeholder="Search..." onkeyup="renderTable()" style="margin-bottom: 0;">
-                    <select id="ppTypeFilter" onchange="renderTable()" style="width: 200px; margin-bottom: 0;">
-                        <option value="" id="lang-optAll">All Types</option>
-                        <option value="MOU">MOU</option>
-                        <option value="CI">CI</option>
-                        <option value="Pink">Pink</option>
-                    </select>
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <input type="text" id="searchBox" placeholder="Search..." onkeyup="renderTable()" style="margin-bottom:0;">
+                    <select id="ppTypeFilter" onchange="renderTable()" style="width:200px; margin-bottom:0;"><option value="">All Types</option><option value="MOU">MOU</option><option value="CI">CI</option><option value="Pink">Pink</option></select>
                 </div>
                 <table>
-                    <thead>
-                        <tr>
-                            <th id="lang-thPhoto">Photo</th><th id="lang-thId">Staff ID</th><th id="lang-thName">Name</th>
-                            <th id="lang-thType">PP Type</th><th id="lang-thWp">WP Expiry</th><th id="lang-th90">90 Days</th><th id="lang-thAction">Action</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Photo</th><th>ID</th><th>Name</th><th>Type</th><th>WP Expiry</th><th>90 Days</th><th>Action</th></tr></thead>
                     <tbody id="workerTableBody"></tbody>
                 </table>
             </div>
         </section>
 
         <section id="add-tab">
-            <h2 id="formHeader">Register Worker Information</h2>
+            <h2 id="formHeader">Register Worker</h2>
             <div class="card" style="max-width:900px; margin:20px auto;">
                 <input type="hidden" id="editId">
                 <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:15px;">
-                    <div><label id="lang-labelStaffId">Staff ID</label><input type="text" id="staffId"></div>
-                    <div><label id="lang-labelName">Full Name</label><input type="text" id="name"></div>
-                    <div>
-                        <label id="lang-labelSex">Sex</label>
-                        <select id="sex">
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                        </select>
-                    </div>
-                    <div><label id="lang-labelDob">Date of Birth</label><input type="date" id="dob"></div>
-                    <div>
-                        <label id="lang-labelPpType">PP Type</label>
-                        <select id="ppType">
-                            <option value="MOU">MOU</option>
-                            <option value="CI">CI</option>
-                            <option value="Pink">Pink</option>
-                            <option value="လက်ဗွေနှိပ်ဆဲ">လက်ဗွေနှိပ်ဆဲ</option>
-                        </select>
-                    </div>
-                    <div><label id="lang-labelPpNo">Passport Number</label><input type="text" id="passportNo"></div>
-                    <div><label id="lang-labelPpExp">Passport Expiry</label><input type="date" id="ppExpiry"></div>
-                    <div><label id="lang-labelVisaExp">Visa Expiry</label><input type="date" id="visaExpiry"></div>
-                    <div><label id="lang-labelWpNo">WP Number</label><input type="text" id="wpNumber"></div>
-                    <div><label id="lang-labelWpExp">WP Expiry Date</label><input type="date" id="wpExpiry"></div>
-                    <div><label id="lang-labelOfWp">Of work permit</label><input type="text" id="ofWorkPermit"></div>
-                    <div><label id="lang-labelIdWork">ID Work</label><input type="text" id="idWork"></div>
-                    <div><label id="lang-labelReport">90 Days Report Date</label><input type="date" id="reportDate"></div>
-                    <div><label id="lang-labelSsoNo">SSO NO</label><input type="text" id="ssoNo"></div>
-                    <div><label id="lang-labelSsoExp">SSO EXPIRY CARD</label><input type="date" id="ssoExpiry"></div>
-                    <div><label id="lang-labelPinkNo">PINK CARD NO</label><input type="text" id="pinkCardNo"></div>
-                    <div><label id="lang-labelPinkExp">PINK EXPIRY</label><input type="date" id="pinkExpiry"></div>
-                    <div>
-                        <label id="lang-labelSocial">Social Security</label>
-                        <select id="hasSocialCard" onchange="toggleSocialInput()">
-                            <option value="No">No</option>
-                            <option value="Yes">Yes</option>
-                        </select>
-                    </div>
+                    <div><label>Staff ID</label><input type="text" id="staffId"></div>
+                    <div><label>Full Name</label><input type="text" id="name"></div>
+                    <div><label>Sex</label><select id="sex"><option value="Male">Male</option><option value="Female">Female</option></select></div>
+                    <div><label>Date of Birth</label><input type="date" id="dob"></div>
+                    <div><label>PP Type</label><select id="ppType"><option value="MOU">MOU</option><option value="CI">CI</option><option value="Pink">Pink</option></select></div>
+                    <div><label>Passport Number</label><input type="text" id="passportNo"></div>
+                    <div><label>Passport Expiry</label><input type="date" id="ppExpiry"></div>
+                    <div><label>Visa Expiry</label><input type="date" id="visaExpiry"></div>
+                    <div><label>WP Number</label><input type="text" id="wpNumber"></div>
+                    <div><label>WP Expiry Date</label><input type="date" id="wpExpiry"></div>
+                    <div><label>Of work permit</label><input type="text" id="ofWorkPermit"></div>
+                    <div><label>ID Work</label><input type="text" id="idWork"></div>
+                    <div><label>90 Days Report Date</label><input type="date" id="reportDate"></div>
+                    <div><label>SSO NO</label><input type="text" id="ssoNo"></div>
+                    <div><label>SSO EXPIRY CARD</label><input type="date" id="ssoExpiry"></div>
+                    <div><label>PINK CARD NO</label><input type="text" id="pinkCardNo"></div>
+                    <div><label>PINK EXPIRY</label><input type="date" id="pinkExpiry"></div>
+                    <div><label>Social Security</label><select id="hasSocialCard"><option value="No">No</option><option value="Yes">Yes</option></select></div>
                 </div>
-                <div style="margin-top:15px;">
-                    <label id="lang-labelPhoto">Staff Photo</label>
-                    <input type="file" accept="image/*" onchange="previewImage(event)">
-                </div>
+                <div style="margin-top:15px;"><label>Photo</label><input type="file" accept="image/*" onchange="previewImage(event)"><img id="imgPreview"></div>
                 <button class="btn" id="saveBtn" style="width:100%; margin-top:15px;" onclick="handleSave()">Save Worker Data</button>
             </div>
         </section>
 
+        <section id="about-tab">
+            <h2 id="lang-aboutTitle">System Information</h2>
+            <div class="card" style="max-width:800px; margin:20px auto; line-height:1.6;">
+                <h3 style="color:var(--primary);">🎯 Project Purpose</h3>
+                <p>Passport, Visa နှင့် WP သက်တမ်းများကို စနစ်တကျ မှတ်တမ်းတင်ရန်။</p>
+                <h3 style="color:var(--primary); margin-top:20px;">💻 Version</h3><p>1.2.6 (Resolved Stat Filter Bug)</p>
+            </div>
+        </section>
+
         <section id="settings-tab">
-            <h2 id="lang-settingsTitle">System Settings</h2>
+            <h2 id="lang-settingsTitle">Settings</h2>
             <div class="card" style="max-width:500px; margin:20px auto;">
-                <h3 style="margin-bottom:15px;"><i class="fas fa-language"></i> <span id="lang-setLang">Language</span></h3>
-                <select id="languageSelect" onchange="changeLanguage(this.value)">
-                    <option value="en">English</option>
-                    <option value="mm">မြန်မာဘာသာ</option>
-                    <option value="th">ไทย</option>
-                </select>
-                <hr style="margin:25px 0; border:0; border-top:1px solid #eee;">
-                <h3 style="margin-bottom:15px;"><i class="fas fa-lock"></i> <span id="lang-setAuth">Change Admin Login</span></h3>
-                <label id="lang-setNewUser">New User ID</label>
-                <input type="text" id="newUserId" placeholder="Admin ID">
-                <label id="lang-setNewPass">New Password</label>
-                <input type="password" id="newPass" placeholder="New Password">
-                <button class="btn" style="width:100%;" onclick="updateAuth()" id="lang-setUpdateBtn">Update Credentials</button>
+                <label>Language</label><select id="languageSelect" onchange="changeLanguage(this.value)"><option value="en">English</option><option value="mm">မြန်မာ</option><option value="th">ไทย</option></select>
+                <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
+                <h3>Change Password</h3>
+                <label>New User ID</label><input type="text" id="newUserId"><label>New Password</label><input type="password" id="newPass">
+                <button class="btn" style="width:100%;" onclick="updateAuth()">Update Credentials</button>
             </div>
         </section>
     </div>
@@ -221,247 +168,137 @@
         let allWorkers = [], currentBase64 = "", activeFilter = 'all', currentLang = 'en';
 
         const translations = {
-            en: {
-                loginTitle: "Worker Admin", loginBtn: "Login", detailTitle: "Worker Full Details", closeBtn: "Close",
-                navAll: "All Workers", navAdd: "Register Worker", navSettings: "Settings", navLogout: "Logout",
-                mainTitle: "Passport Information List", statTotal: "Total Workers", statWpExp: "WP Expired", stat90Days: "90 Days Due", statPpExp: "PP Expired",
-                thPhoto: "Photo", thId: "Staff ID", thName: "Name", thType: "PP Type", thWp: "WP Expiry", th90: "90 Days", thAction: "Action",
-                labelStaffId: "Staff ID", labelName: "Full Name", labelSex: "Sex", labelDob: "DOB", labelPpType: "PP Type", labelPpNo: "Passport No", labelPpExp: "PP Expiry", labelVisaExp: "Visa Expiry", labelWpNo: "WP Number", labelWpExp: "WP Expiry", labelOfWp: "Of WP", labelIdWork: "ID Work", labelReport: "90 Days Report", labelSsoNo: "SSO NO", labelSsoExp: "SSO EXPIRY", labelPinkNo: "PINK CARD NO", labelPinkExp: "PINK EXPIRY", labelSocial: "Social Security", labelPhoto: "Staff Photo", labelAge: "Age",
-                settingsTitle: "System Settings", setLang: "Language", setAuth: "Change Admin Login", setNewUser: "New User ID", setNewPass: "New Password", setUpdateBtn: "Update Credentials"
-            },
-            mm: {
-                loginTitle: "အက်ဒမင် ဝင်ရောက်ရန်", loginBtn: "လော့ဂ်အင်ဝင်ပါ", detailTitle: "အသေးစိတ်အချက်အလက်များ", closeBtn: "ပိတ်မည်",
-                navAll: "ဝန်ထမ်းအားလုံး", navAdd: "ဝန်ထမ်းသစ်သွင်းရန်", navSettings: "ချိန်ညှိချက်များ", navLogout: "ထွက်ရန်",
-                mainTitle: "Passport အချက်အလက်စာရင်း", statTotal: "စုစုပေါင်း", statWpExp: "WP သက်တမ်းကုန်", stat90Days: "ရက် ၉၀ တိုင်ရန်", statPpExp: "PP သက်တမ်းကုန်",
-                thPhoto: "ဓာတ်ပုံ", thId: "ကတ်နံပါတ်", thName: "အမည်", thType: "PP အမျိုးအစား", thWp: "WP သက်တမ်းကုန်", th90: "ရက် ၉၀", thAction: "ပြင်ဆင်",
-                labelStaffId: "ဝန်ထမ်းနံပါတ်", labelName: "နာမည်အပြည့်အစုံ", labelSex: "ကျား/မ", labelDob: "မွေးသက္ကရာဇ်", labelPpType: "ပတ်စပို့အမျိုးအစား", labelPpNo: "ပတ်စပို့နံပါတ်", labelPpExp: "PP သက်တမ်းကုန်ရက်", labelVisaExp: "ဗီဇာသက်တမ်းကုန်ရက်", labelWpNo: "WP နံပါတ်", labelWpExp: "WP သက်တမ်းကုန်ရက်", labelOfWp: "WP အသေးစိတ်", labelIdWork: "ID Work", labelReport: "ရက် ၉၀ အစီရင်ခံရက်", labelSsoNo: "SSO နံပါတ်", labelSsoExp: "SSO သက်တမ်းကုန်ရက်", labelPinkNo: "ပန်းရောင်ကတ်နံပါတ်", labelPinkExp: "ပန်းရောင်ကတ်သက်တမ်းကုန်ရက်", labelSocial: "ပက်ကန်ကတ်", labelPhoto: "ဝန်ထမ်းဓာတ်ပုံ", labelAge: "အသက်",
-                settingsTitle: "စနစ်ချိန်ညှိချက်များ", setLang: "ဘာသာစကား", setAuth: "အကောင့်ပြောင်းရန်", setNewUser: "ယူဆာအသစ်", setNewPass: "စကားဝှက်အသစ်", setUpdateBtn: "အချက်အလက်ပြင်မည်"
-            },
-            th: {
-                loginTitle: "ผู้ดูแลระบบ", loginBtn: "เข้าสู่ระบบ", detailTitle: "รายละเอียดทั้งหมด", closeBtn: "ปิด",
-                navAll: "พนักงานทั้งหมด", navAdd: "ลงทะเบียนพนักงาน", navSettings: "การตั้งค่า", navLogout: "ออกจากระบบ",
-                mainTitle: "รายการข้อมูลพาสปอร์ต", statTotal: "พนักงานทั้งหมด", statWpExp: "WP หมดอายุ", stat90Days: "ครบกำหนด 90 วัน", statPpExp: "PP หมดอายุ",
-                thPhoto: "รูปภาพ", thId: "รหัสพนักงาน", thName: "ชื่อ-นามสกุล", thType: "ประเภท PP", thWp: "WP หมดอายุ", th90: "รายงาน 90 วัน", thAction: "จัดการ",
-                labelStaffId: "รหัสพนักงาน", labelName: "ชื่อเต็ม", labelSex: "เพศ", labelDob: "วันเกิด", labelPpType: "ประเภทพาสปอร์ต", labelPpNo: "หมายเลขพาสปอร์ต", labelPpExp: "PP หมดอายุ", labelVisaExp: "Visa หมดอายุ", labelWpNo: "เลขที่ใบอนุญาต", labelWpExp: "WP หมดอายุ", labelOfWp: "รายละเอียด WP", labelIdWork: "ID Work", labelReport: "รายงาน 90 วัน", labelSsoNo: "เลข SSO", labelSsoExp: "วันหมดอายุ SSO", labelPinkNo: "เลขบัตรชมพู", labelPinkExp: "วันหมดอายุบัตรชมพู", labelSocial: "ประกันสังคม", labelPhoto: "รูปพนักงาน", labelAge: "อายุ",
-                settingsTitle: "ตั้งค่าระบบ", setLang: "ภาษา", setAuth: "เปลี่ยนรหัสผ่าน", setNewUser: "ชื่อผู้ใช้ใหม่", setNewPass: "รหัสผ่านใหม่", setUpdateBtn: "อัปเดตข้อมูล"
-            }
+            en: { loginTitle: "Worker Admin", loginBtn: "Login", navAll: "All Workers", navAdd: "Register", navSettings: "Settings", navAbout: "About", navLogout: "Logout", mainTitle: "Worker List", statTotal: "Total", statWpExp: "WP Exp", stat90Days: "90 Days", statPpExp: "PP Exp" },
+            mm: { loginTitle: "အက်ဒမင် ဝင်ရောက်ရန်", loginBtn: "လော့ဂ်အင်", navAll: "ဝန်ထမ်းအားလုံး", navAdd: "ဝန်ထမ်းသစ်", navSettings: "ချိန်ညှိချက်", navAbout: "စနစ်အကြောင်း", navLogout: "ထွက်ရန်", mainTitle: "ဝန်ထမ်းစာရင်း", statTotal: "စုစုပေါင်း", statWpExp: "WP သက်တမ်းကုန်", stat90Days: "ရက် ၉၀", statPpExp: "PP သက်တမ်းကုန်" },
+            th: { loginTitle: "เข้าสู่ระบบ", loginBtn: "เข้าสู่ระบบ", navAll: "พนักงานทั้งหมด", navAdd: "ลงทะเบียน", navSettings: "การตั้งค่า", navAbout: "เกี่ยวกับ", navLogout: "ออกจากระบบ", mainTitle: "รายการพนักงาน", statTotal: "ทั้งหมด", statWpExp: "WP หมดอายุ", stat90Days: "ครบ 90 วัน", statPpExp: "PP หมดอายุ" }
         };
-
-        function changeLanguage(lang) {
-            currentLang = lang;
-            localStorage.setItem('mgjen_lang', lang);
-            Object.keys(translations[lang]).forEach(key => {
-                const el = document.getElementById('lang-' + key);
-                if(el) el.innerText = translations[lang][key];
-            });
-            renderTable(); updateStats();
-        }
-
-        async function handleLogin() {
-            const u = document.getElementById('loginUser').value, p = document.getElementById('loginPass').value;
-            const storedU = localStorage.getItem('mgjen_user') || "admin";
-            const storedP = localStorage.getItem('mgjen_pass') || "1234";
-            if(u === storedU && p === storedP) { sessionStorage.setItem("isLoggedIn", "true"); location.reload(); }
-            else alert("Error: Access Denied");
-        }
-
-        function updateAuth() {
-            const newU = document.getElementById('newUserId').value;
-            const newP = document.getElementById('newPass').value;
-            if(!newU || !newP) return alert("Fill both fields");
-            localStorage.setItem('mgjen_user', newU);
-            localStorage.setItem('mgjen_pass', newP);
-            alert("Credentials Updated! Please login again.");
-            handleLogout();
-        }
-
-        function handleLogout() { sessionStorage.clear(); location.reload(); }
-
-        async function init() {
-            const savedLang = localStorage.getItem('mgjen_lang') || 'en';
-            document.getElementById('languageSelect').value = savedLang;
-            changeLanguage(savedLang);
-            if(sessionStorage.getItem("isLoggedIn") !== "true") return;
-            document.getElementById('loginOverlay').style.display = 'none';
-            await loadData();
-        }
-
-        async function loadData() {
-            const snap = await db.collection("workers_pps_final").get();
-            allWorkers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            updateStats(); renderTable();
-        }
-
-        function filterByStatus(type) {
-            activeFilter = type;
-            document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active-filter'));
-            const map = { all: 'all', wpExp: 'wp', reportDue: 'report', ppExp: 'pp' };
-            document.getElementById('stat-' + map[type]).classList.add('active-filter');
-            renderTable();
-        }
-
-        function getDaysDiff(dateStr) {
-            if(!dateStr) return null;
-            const today = new Date(); today.setHours(0,0,0,0);
-            const target = new Date(dateStr);
-            return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
-        }
 
         function calculateAge(dobStr) {
             if (!dobStr) return "-";
-            const birthDate = new Date(dobStr);
-            const today = new Date();
-            let age = today.getFullYear() - birthDate.getFullYear();
-            const m = today.getMonth() - birthDate.getMonth();
-            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) { age--; }
-            return age;
+            const dob = new Date(dobStr); const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) age--;
+            return age + " Years";
         }
+
+        // --- FIXED: Detail/Edit functions now work in Stat Filter mode ---
+        function viewDetail(id) {
+            const w = allWorkers.find(x => x.id === id); if(!w) return;
+            const modalBody = document.getElementById('modalBody');
+            const details = [
+                { label: "Staff ID", val: w.staffId }, { label: "Name", val: w.name }, { label: "Age", val: calculateAge(w.dob) },
+                { label: "Sex", val: w.sex }, { label: "PP Type", val: w.ppType }, { label: "PP No", val: w.passportNo },
+                { label: "PP Exp", val: formatDate(w.ppExpiry) }, { label: "Visa Exp", val: formatDate(w.visaExpiry) },
+                { label: "WP No", val: w.wpNumber }, { label: "WP Exp", val: formatDate(w.wpExpiry) }, { label: "90 Days", val: formatDate(w.reportDate) },
+                { label: "SSO No", val: w.ssoNo }, { label: "SSO Exp", val: formatDate(w.ssoExpiry) }, { label: "Pink Card", val: w.pinkCardNo },
+                { label: "Social", val: w.hasSocialCard }
+            ];
+            modalBody.innerHTML = `<center><img src="${w.photo||'https://via.placeholder.com/100'}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;margin-bottom:15px;border:3px solid #2563eb;"></center>` +
+                details.map(d => `<div class="detail-row"><span class="detail-label">${d.label}</span><span class="detail-value">${d.val||'-'}</span></div>`).join('');
+            document.getElementById('detailModal').style.display = 'flex';
+        }
+
+        function editWorker(id) {
+            const w = allWorkers.find(x => x.id === id); if(!w) return;
+            document.getElementById('editId').value = id;
+            document.getElementById('staffId').value = w.staffId || "";
+            document.getElementById('name').value = w.name || "";
+            document.getElementById('sex').value = w.sex || "Male";
+            document.getElementById('dob').value = w.dob || "";
+            document.getElementById('ppType').value = w.ppType || "MOU";
+            document.getElementById('passportNo').value = w.passportNo || "";
+            document.getElementById('ppExpiry').value = w.ppExpiry || "";
+            document.getElementById('visaExpiry').value = w.visaExpiry || "";
+            document.getElementById('wpNumber').value = w.wpNumber || "";
+            document.getElementById('wpExpiry').value = w.wpExpiry || "";
+            document.getElementById('ofWorkPermit').value = w.ofWorkPermit || "";
+            document.getElementById('idWork').value = w.idWork || "";
+            document.getElementById('reportDate').value = w.reportDate || "";
+            document.getElementById('ssoNo').value = w.ssoNo || "";
+            document.getElementById('ssoExpiry').value = w.ssoExpiry || "";
+            document.getElementById('pinkCardNo').value = w.pinkCardNo || "";
+            document.getElementById('pinkExpiry').value = w.pinkExpiry || "";
+            document.getElementById('hasSocialCard').value = w.hasSocialCard || "No";
+            if(w.photo) { currentBase64 = w.photo; document.getElementById('imgPreview').src = w.photo; document.getElementById('imgPreview').style.display='block'; }
+            document.getElementById('formHeader').innerText = "Edit: " + w.name;
+            switchTab('add');
+        }
+
+        async function handleSave() {
+            const btn = document.getElementById('saveBtn'); btn.disabled = true; btn.innerText = "Saving...";
+            const data = {
+                staffId: document.getElementById('staffId').value, name: document.getElementById('name').value, sex: document.getElementById('sex').value,
+                dob: document.getElementById('dob').value, ppType: document.getElementById('ppType').value, passportNo: document.getElementById('passportNo').value,
+                ppExpiry: document.getElementById('ppExpiry').value, visaExpiry: document.getElementById('visaExpiry').value, wpNumber: document.getElementById('wpNumber').value,
+                wpExpiry: document.getElementById('wpExpiry').value, ofWorkPermit: document.getElementById('ofWorkPermit').value, idWork: document.getElementById('idWork').value,
+                reportDate: document.getElementById('reportDate').value, ssoNo: document.getElementById('ssoNo').value, ssoExpiry: document.getElementById('ssoExpiry').value,
+                pinkCardNo: document.getElementById('pinkCardNo').value, pinkExpiry: document.getElementById('pinkExpiry').value, hasSocialCard: document.getElementById('hasSocialCard').value, photo: currentBase64
+            };
+            try {
+                const eid = document.getElementById('editId').value;
+                if(eid) await db.collection("workers_pps_final").doc(eid).update(data);
+                else await db.collection("workers_pps_final").add(data);
+                alert("Saved Successfully!"); resetForm(); switchTab('list'); await loadData();
+            } catch(e) { alert("Error!"); }
+            finally { btn.disabled = false; btn.innerText = "Save Worker Data"; }
+        }
+
+        async function deleteWorker(id) { if(confirm("Are you sure?")) { await db.collection("workers_pps_final").doc(id).delete(); await loadData(); } }
+        async function loadData() { const snap = await db.collection("workers_pps_final").get(); allWorkers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); updateStats(); renderTable(); }
 
         function renderTable() {
             const tbody = document.getElementById('workerTableBody');
             const search = document.getElementById('searchBox').value.toLowerCase();
             const typeFilter = document.getElementById('ppTypeFilter').value;
 
-            let filtered = allWorkers.filter(w => 
-                (w.name.toLowerCase().includes(search) || (w.staffId && w.staffId.toLowerCase().includes(search)) || (w.passportNo && w.passportNo.toLowerCase().includes(search))) &&
-                (typeFilter === "" || w.ppType === typeFilter)
-            );
+            let filtered = allWorkers.filter(w => {
+                const matchSearch = (w.name || "").toLowerCase().includes(search) || (w.staffId || "").toLowerCase().includes(search);
+                const matchType = typeFilter === "" || w.ppType === typeFilter;
+                
+                if (!matchSearch || !matchType) return false;
 
-            if(activeFilter === 'wpExp') filtered = filtered.filter(w => getDaysDiff(w.wpExpiry) <= 7);
-            if(activeFilter === 'reportDue') filtered = filtered.filter(w => getDaysDiff(w.reportDate) <= 7 && getDaysDiff(w.reportDate) >= 0);
-            if(activeFilter === 'ppExp') filtered = filtered.filter(w => getDaysDiff(w.ppExpiry) <= 30);
+                // Stat Filter logic
+                if (activeFilter === 'wpExp') return getDaysDiff(w.wpExpiry) <= 7;
+                if (activeFilter === 'reportDue') return getDaysDiff(w.reportDate) <= 7;
+                if (activeFilter === 'ppExp') return getDaysDiff(w.ppExpiry) <= 7;
+                return true;
+            });
 
-            tbody.innerHTML = filtered.map(w => {
-                const wpDiff = getDaysDiff(w.wpExpiry);
-                const rDiff = getDaysDiff(w.reportDate);
-                const wpStatus = wpDiff < 0 ? 'badge-danger' : wpDiff <= 7 ? 'badge-warning' : 'badge-success';
-                const rStatus = rDiff < 0 ? 'badge-danger' : rDiff <= 7 ? 'badge-warning' : 'badge-success';
-                const wpColor = wpDiff <= 7 ? 'color: var(--danger);' : 'color: var(--success);';
-                const rColor = rDiff <= 7 ? 'color: var(--danger);' : 'color: var(--success);';
-
-                return `<tr>
-                    <td><img src="${w.photo || 'https://via.placeholder.com/35'}" style="width:35px;height:35px;border-radius:50%;object-fit:cover;cursor:pointer;border:1px solid #ddd" onclick="viewDetail('${w.id}')"></td>
-                    <td><span class="badge badge-info">${w.staffId || '-'}</span></td>
-                    <td><strong style="cursor:pointer; color:var(--primary);" onclick="viewDetail('${w.id}')">${w.name}</strong></td>
-                    <td><span class="badge badge-pp">${w.ppType}</span></td>
-                    <td><span class="badge ${wpStatus}">${w.wpExpiry || '-'}</span><span class="days-left" style="${wpColor}">${wpDiff < 0 ? 'Exp' : wpDiff + 'd left'}</span></td>
-                    <td><span class="badge ${rStatus}">${w.reportDate || '-'}</span><span class="days-left" style="${rColor}">${rDiff < 0 ? 'Exp' : rDiff + 'd left'}</span></td>
-                    <td><i class="fas fa-edit" style="color:var(--warning);cursor:pointer;margin-right:10px" onclick="editWorker('${w.id}')"></i><i class="fas fa-trash" style="color:var(--danger);cursor:pointer" onclick="deleteWorker('${w.id}')"></i></td>
-                </tr>`;
-            }).join('');
+            tbody.innerHTML = filtered.map(w => `<tr>
+                <td><img src="${w.photo||'https://via.placeholder.com/35'}" style="width:35px;height:35px;border-radius:50%;object-fit:cover;cursor:pointer;" onclick="viewDetail('${w.id}')"></td>
+                <td><span class="badge badge-info">${w.staffId||'-'}</span></td>
+                <td><strong style="cursor:pointer;color:var(--primary);" onclick="viewDetail('${w.id}')">${w.name}</strong></td>
+                <td>${w.ppType}</td>
+                <td><span class="badge ${getDaysDiff(w.wpExpiry)<=7?'badge-danger':'badge-success'}">${formatDate(w.wpExpiry)}</span></td>
+                <td><span class="badge ${getDaysDiff(w.reportDate)<=7?'badge-warning':'badge-success'}">${formatDate(w.reportDate)}</span></td>
+                <td><i class="fas fa-edit" style="color:var(--warning);cursor:pointer;margin-right:10px" onclick="editWorker('${w.id}')"></i><i class="fas fa-trash" style="color:var(--danger);cursor:pointer" onclick="deleteWorker('${w.id}')"></i></td>
+            </tr>`).join('');
         }
 
-        window.viewDetail = function(id) {
-            const w = allWorkers.find(x => x.id === id);
-            const modalBody = document.getElementById('modalBody');
-            const lang = translations[currentLang];
-            const age = calculateAge(w.dob);
-
-            modalBody.innerHTML = `
-                <div style="text-align:center; margin-bottom:20px;">
-                    <img src="${w.photo || 'https://via.placeholder.com/120'}" style="width:120px;height:120px;border-radius:15px;object-fit:cover;border:3px solid var(--primary);">
-                </div>
-                <div class="detail-row"><span class="detail-label">${lang.labelName}</span><span class="detail-value">${w.name} (${w.sex || '-'})</span></div>
-                <div class="detail-row"><span class="detail-label">${lang.labelAge}</span><span class="detail-value" style="color:var(--primary);">${age} Years</span></div>
-                <div class="detail-row"><span class="detail-label">${lang.labelStaffId}</span><span class="detail-value">${w.staffId || '-'}</span></div>
-                <div class="detail-row"><span class="detail-label">${lang.labelPpType}</span><span class="detail-value">${w.ppType}</span></div>
-                <div class="detail-row"><span class="detail-label">${lang.labelPpNo}</span><span class="detail-value">${w.passportNo}</span></div>
-                <div class="detail-row"><span class="detail-label">${lang.labelPpExp}</span><span class="detail-value">${w.ppExpiry || '-'}</span></div>
-                <div class="detail-row"><span class="detail-label">${lang.labelVisaExp}</span><span class="detail-value">${w.visaExpiry || '-'}</span></div>
-                <div class="detail-row"><span class="detail-label">${lang.labelWpNo}</span><span class="detail-value">${w.wpNumber || '-'}</span></div>
-                <div class="detail-row"><span class="detail-label">${lang.labelWpExp}</span><span class="detail-value">${w.wpExpiry || '-'}</span></div>
-                <div class="detail-row"><span class="detail-label">${lang.labelIdWork}</span><span class="detail-value">${w.idWork || '-'}</span></div>
-                <div class="detail-row"><span class="detail-label">${lang.labelSsoNo}</span><span class="detail-value">${w.ssoNo || '-'}</span></div>
-                <div class="detail-row"><span class="detail-label">${lang.labelSsoExp}</span><span class="detail-value">${w.ssoExpiry || '-'}</span></div>
-                <div class="detail-row"><span class="detail-label">${lang.labelPinkNo}</span><span class="detail-value">${w.pinkCardNo || '-'}</span></div>
-                <div class="detail-row"><span class="detail-label">${lang.labelPinkExp}</span><span class="detail-value">${w.pinkExpiry || '-'}</span></div>
-                <div class="detail-row"><span class="detail-label">${lang.labelReport}</span><span class="detail-value">${w.reportDate || '-'}</span></div>
-            `;
-            document.getElementById('detailModal').style.display = 'flex';
+        function filterByStatus(s) {
+            activeFilter = s;
+            document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active-filter'));
+            const map = { all: 'stat-all', wpExp: 'stat-wp', reportDue: 'stat-report', ppExp: 'stat-pp' };
+            document.getElementById(map[s]).classList.add('active-filter');
+            renderTable();
         }
 
-        function updateStats() {
-            document.getElementById('totalCount').innerText = allWorkers.length;
-            document.getElementById('wpExpCount').innerText = allWorkers.filter(w => getDaysDiff(w.wpExpiry) <= 7).length;
-            document.getElementById('reportDueCount').innerText = allWorkers.filter(w => getDaysDiff(w.reportDate) <= 7 && getDaysDiff(w.reportDate) >= 0).length;
-            document.getElementById('ppCount').innerText = allWorkers.filter(w => getDaysDiff(w.ppExpiry) <= 30).length;
-        }
-
-        window.closeModal = function() { document.getElementById('detailModal').style.display = 'none'; }
+        function resetForm() { document.getElementById('editId').value=""; document.querySelectorAll('#add-tab input').forEach(i=>i.value=""); document.getElementById('imgPreview').style.display='none'; currentBase64=""; document.getElementById('formHeader').innerText="Register Worker"; }
+        function formatDate(s) { if(!s) return "-"; const p=s.split("-"); return p.length===3?`${p[2]}-${p[1]}-${p[0]}`:s; }
+        function getDaysDiff(s) { if(!s) return 999; return Math.ceil((new Date(s)-new Date())/(864e5)); }
+        function switchTab(t) { document.querySelectorAll('section').forEach(s=>s.classList.remove('active')); document.getElementById(t+'-tab').classList.add('active'); document.querySelectorAll('.sidebar li').forEach(li=>li.classList.remove('active')); document.getElementById('btn-'+t).classList.add('active'); }
+        function closeModal() { document.getElementById('detailModal').style.display='none'; }
+        function changeLanguage(l) { currentLang=l; localStorage.setItem('mgjen_lang',l); Object.keys(translations[l]).forEach(k=>{const el=document.getElementById('lang-'+k); if(el) el.innerText=translations[l][k];}); renderTable(); }
+        function updateStats() { document.getElementById('totalCount').innerText=allWorkers.length; document.getElementById('wpExpCount').innerText=allWorkers.filter(w=>getDaysDiff(w.wpExpiry) <= 7).length; document.getElementById('reportDueCount').innerText=allWorkers.filter(w=>getDaysDiff(w.reportDate) <= 7).length; document.getElementById('ppCount').innerText=allWorkers.filter(w=>getDaysDiff(w.ppExpiry) <= 7).length; }
+        function handleLogout() { sessionStorage.clear(); location.reload(); }
+        function handleLogin() { const u=document.getElementById('loginUser').value, p=document.getElementById('loginPass').value; if(u===(localStorage.getItem('mgjen_user')||"admin") && p===(localStorage.getItem('mgjen_pass')||"1234")) { sessionStorage.setItem("isLoggedIn","true"); location.reload(); } else alert("Access Denied"); }
+        function previewImage(e) { const r=new FileReader(); r.onload=(f)=>{currentBase64=f.target.result; document.getElementById('imgPreview').src=f.target.result; document.getElementById('imgPreview').style.display='block';}; r.readAsDataURL(e.target.files[0]); }
+        function updateAuth() { const u=document.getElementById('newUserId').value, p=document.getElementById('newPass').value; if(u&&p){localStorage.setItem('mgjen_user',u); localStorage.setItem('mgjen_pass',p); alert("Updated!");}}
         
-        async function handleSave() {
-            const btn = document.getElementById('saveBtn'); const id = document.getElementById('editId').value;
-            const data = { 
-                staffId: document.getElementById('staffId').value, 
-                name: document.getElementById('name').value, 
-                sex: document.getElementById('sex').value,
-                ppType: document.getElementById('ppType').value, 
-                passportNo: document.getElementById('passportNo').value, 
-                wpNumber: document.getElementById('wpNumber').value || "", 
-                ofWorkPermit: document.getElementById('ofWorkPermit').value || "", 
-                dob: document.getElementById('dob').value, 
-                ppExpiry: document.getElementById('ppExpiry').value, 
-                visaExpiry: document.getElementById('visaExpiry').value || "",
-                wpExpiry: document.getElementById('wpExpiry').value, 
-                idWork: document.getElementById('idWork').value || "",
-                reportDate: document.getElementById('reportDate').value, 
-                ssoNo: document.getElementById('ssoNo').value || "",
-                ssoExpiry: document.getElementById('ssoExpiry').value || "",
-                pinkCardNo: document.getElementById('pinkCardNo').value || "",
-                pinkExpiry: document.getElementById('pinkExpiry').value || "",
-                hasSocialCard: document.getElementById('hasSocialCard').value, 
-                photo: currentBase64 
-            };
-            btn.disabled = true; 
-            try { 
-                id ? await db.collection("workers_pps_final").doc(id).update(data) : await db.collection("workers_pps_final").add(data); 
-                alert("Success!"); loadData(); switchTab('list'); resetForm(); 
-            } catch(e) { alert("Error!"); } 
-            btn.disabled = false;
-        }
-
-        function editWorker(id) {
-            const w = allWorkers.find(x => x.id === id); document.getElementById('editId').value = id;
-            document.getElementById('staffId').value = w.staffId || ""; 
-            document.getElementById('name').value = w.name;
-            document.getElementById('sex').value = w.sex || "Male";
-            document.getElementById('ppType').value = w.ppType; 
-            document.getElementById('passportNo').value = w.passportNo;
-            document.getElementById('wpNumber').value = w.wpNumber || ""; 
-            document.getElementById('ofWorkPermit').value = w.ofWorkPermit || "";
-            document.getElementById('dob').value = w.dob || ""; 
-            document.getElementById('ppExpiry').value = w.ppExpiry;
-            document.getElementById('visaExpiry').value = w.visaExpiry || "";
-            document.getElementById('wpExpiry').value = w.wpExpiry; 
-            document.getElementById('idWork').value = w.idWork || "";
-            document.getElementById('reportDate').value = w.reportDate;
-            document.getElementById('ssoNo').value = w.ssoNo || "";
-            document.getElementById('ssoExpiry').value = w.ssoExpiry || "";
-            document.getElementById('pinkCardNo').value = w.pinkCardNo || "";
-            document.getElementById('pinkExpiry').value = w.pinkExpiry || "";
-            document.getElementById('hasSocialCard').value = w.hasSocialCard; 
-            currentBase64 = w.photo; switchTab('add'); document.getElementById('formHeader').innerText = "Edit Worker";
-        }
-
-        async function deleteWorker(id) { if(confirm("Delete?")) { await db.collection("workers_pps_final").doc(id).delete(); loadData(); } }
-        
-        function switchTab(t) { 
-            document.querySelectorAll('section').forEach(s => s.classList.remove('active')); document.getElementById(t + '-tab').classList.add('active'); 
-            document.querySelectorAll('.sidebar li').forEach(li => li.classList.remove('active')); document.getElementById('btn-' + t).classList.add('active');
-        }
-        function toggleSocialInput() { /* Keeping this for original logic compatibility */ }
-        function resetForm() { 
-            document.getElementById('editId').value = ""; 
-            currentBase64 = ""; 
-            document.getElementById('formHeader').innerText = "Register Worker"; 
-            document.querySelectorAll('#add-tab input').forEach(i => i.value = "");
-        }
-        function previewImage(e) { 
-            const r = new FileReader(); 
-            r.onload = () => { currentBase64 = r.result; console.log("Photo loaded."); }; 
-            r.readAsDataURL(e.target.files[0]); 
-        }
-        init();
+        window.onload = () => {
+            const savedLang = localStorage.getItem('mgjen_lang') || 'en'; changeLanguage(savedLang);
+            if(sessionStorage.getItem("isLoggedIn") === "true") { document.getElementById('loginOverlay').style.display='none'; loadData(); }
+        };
     </script>
 </body>
 </html>
