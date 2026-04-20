@@ -1,231 +1,149 @@
 <!DOCTYPE html>
-<html lang="my">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pro Finance Manager v5.3</title>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <title>MGJEN Staff App</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/912/912318.png">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-firestore-compat.js"></script>
+    
     <style>
-        :root { --primary: #6366f1; --income: #22c55e; --expense: #ef4444; --bg: #f8fafc; --text: #1e293b; --card: #ffffff; }
-        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: var(--text); margin: 0; padding: 10px; overflow-x: hidden; }
-        .container { background: var(--card); width: 100%; max-width: 600px; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin: auto; }
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --accent: #8b5cf6; --success: #22c55e; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); padding-bottom: 30px; }
+
+        /* App Header */
+        .header { background: white; padding: 15px; text-align: center; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .container { padding: 15px; max-width: 500px; margin: 0 auto; }
         
-        #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 2000; }
-        .balance-card { background: linear-gradient(135deg, #1e293b, #334155); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 15px; }
-        input, select { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 16px; background: #fff; }
-        .btn-main { background: var(--primary); color: white; border: none; width: 100%; padding: 15px; border-radius: 12px; font-size: 18px; cursor: pointer; font-weight: bold; }
+        /* Profile Card */
+        .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 15px; border: 1px solid #edf2f7; }
+        .profile-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); margin-bottom: 10px; }
         
-        /* Table Style */
-        .table-wrap { overflow-x: auto; margin-top: 15px; }
-        .excel-table { width: 100%; border-collapse: collapse; min-width: 400px; border: 1px solid #ddd; }
-        .excel-table th, .excel-table td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 14px; }
-        .excel-table th { background: #f1f5f9; }
+        /* Section Titles */
+        .sec-title { font-size: 14px; font-weight: bold; color: var(--primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+
+        /* Data Rows */
+        .data-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .data-row:last-child { border: none; }
+        .label { color: #64748b; }
+        .val { font-weight: 600; }
+
+        /* Form Inputs */
+        input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1.5px solid #e2e8f0; border-radius: 12px; outline: none; font-size: 14px; }
+        input:focus, textarea:focus { border-color: var(--primary); }
+        .btn { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .btn:active { transform: scale(0.96); }
+
+        /* Login Overlay */
+        #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
         
-        .no-print { display: block; }
-        @media print { .no-print { display: none !important; } .container { box-shadow: none; border: none; width: 100%; max-width: 100%; } .excel-table { width: 100% !important; border: 1px solid #000; } .excel-table th, .excel-table td { border: 1px solid #000; } }
-        #appContent, #recordsPage, #settingsPage, #proPage { display: none; }
-        .income-text { color: var(--income); font-weight: bold; } .expense-text { color: var(--expense); font-weight: bold; }
+        #noticeBoard { display: none; background: #fffbeb; border: 1px solid #f59e0b; padding: 15px; border-radius: 15px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
-<div id="loginOverlay">
-    <div class="container" style="max-width: 350px; text-align: center;">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" width="60" style="margin-bottom:15px;">
-        <h3>Pro Finance Manager</h3>
-        <p style="font-size: 14px; color: #64748b;">ဆက်လက်အသုံးပြုရန် Google ဖြင့် Login ဝင်ပါ</p>
-        <button class="btn-main" onclick="handleAuthClick()" style="background: #4285F4;">Google Sign In</button>
-    </div>
-</div>
-
-<div class="container no-print" id="appContent">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h4 style="margin:0;">ပင်မစာမျက်နှာ</h4>
-        <button onclick="showPage('settingsPage')" style="border:none; background:none; font-size:20px; cursor:pointer;">⚙️</button>
+    <div id="loginOverlay">
+        <div style="width:100%; max-width:320px; text-align:center;">
+            <img src="https://cdn-icons-png.flaticon.com/512/912/912318.png" width="80" style="margin-bottom:20px;">
+            <h2>MGJEN Staff Portal</h2>
+            <p style="color:#64748b; font-size:13px; margin: 10px 0 20px;">စနစ်ကိုအသုံးပြုရန် နာမည်ရိုက်ထည့်ပါ</p>
+            <input type="text" id="staffName" placeholder="Mg Mg">
+            <button class="btn" onclick="handleLogin()">Login</button>
+        </div>
     </div>
 
-    <div class="balance-card">
-        <p style="margin:0; font-size: 14px; opacity: 0.8;">လက်ကျန်ငွေ</p>
-        <h1 id="totalBalance" style="margin: 5px 0;">0 Ks</h1>
-        <button onclick="showPage('recordsPage')" style="background:rgba(255,255,255,0.2); border:none; color:white; padding:8px 15px; border-radius:50px; cursor:pointer; font-size:13px;">စာရင်းမှတ်တမ်းကြည့်မည်</button>
+    <div class="header">
+        <h3 style="color: var(--primary);"><i class="fas fa-circle-user"></i> MGJEN HR</h3>
     </div>
 
-    <select id="wallet">
-        <option value="Cash">💵 Cash (လက်ကျန်ငွေသား)</option>
-        <option value="Bank">🏦 Bank (ဘဏ်အကောင့်)</option>
-        <option value="KPay">📱 KPay / Wave</option>
-    </select>
-    <select id="type"><option value="income">ဝင်ငွေ (+)</option><option value="expense">ထွက်ငွေ (-)</option></select>
-    <input type="number" id="amount" placeholder="ပမာဏ (ဥပမာ- ၅၀၀၀)" inputmode="numeric">
-    <input type="text" id="note" placeholder="မှတ်ချက် (ဥပမာ- စားသောက်စရိတ်)">
-    <button class="btn-main" onclick="addData()">စာရင်းသွင်းမည်</button>
+    <div class="container" id="appContent" style="display:none;">
+        
+        <div id="noticeBoard">
+            <p id="noticeMsg" style="color:#b45309; font-size:14px;"></p>
+        </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
-        <button class="btn-main" onclick="showPage('proPage')" style="background: #8b5cf6; font-size: 14px; padding: 12px;">🚀 Pro Features</button>
-        <button class="btn-main" onclick="exportCSV()" style="background: #10b981; font-size: 14px; padding: 12px;">📊 Excel (CSV)</button>
+        <div class="card" style="text-align:center;">
+            <img id="p-img" src="" class="profile-img">
+            <h2 id="p-name"></h2>
+            <p id="p-role" style="color: #64748b; font-size: 14px;"></p>
+        </div>
+
+        <div class="card">
+            <p class="sec-title"><i class="fas fa-paper-plane"></i> Leave Report (ခွင့်တိုင်ရန်)</p>
+            <div style="display:flex; gap:10px;">
+                <input type="date" id="leaveStart">
+                <input type="date" id="leaveEnd">
+            </div>
+            <textarea id="leaveReason" placeholder="ခွင့်ယူရသည့် အကြောင်းအရင်း..."></textarea>
+            <button class="btn" style="background:var(--accent);" onclick="submitLeave()">Submit Report</button>
+        </div>
+
+        <div class="card">
+            <p class="sec-title"><i class="fas fa-info-circle"></i> My Info</p>
+            <div class="data-row"><span class="label">Total Loan:</span><span id="p-loan" class="val" style="color:red;">0</span></div>
+            <div class="data-row"><span class="label">Passport Exp:</span><span id="p-pp" class="val"></span></div>
+        </div>
+
+        <button class="btn" style="background:#64748b;" onclick="location.reload()">Logout</button>
     </div>
-</div>
 
-<div class="container" id="proPage">
-    <button onclick="showPage('appContent')" style="border:none; background:none; cursor:pointer; font-size:16px;">← ပြန်ထွက်မည်</button>
-    <h3 style="margin-top:15px;">🚀 Pro Features</h3>
-    <div style="background: #f1f5f9; padding: 15px; border-radius: 15px; margin-bottom: 10px;">
-        <label style="font-size:14px; font-weight:bold;">Budget Limit (စားသောက်စရိတ်)</label>
-        <input type="number" id="budgetLimit" placeholder="ဥပမာ- ၃၀၀၀၀၀" onchange="saveBudget()">
-        <p style="font-size: 12px; color: #64748b; margin: 0;">* သတ်မှတ်ထားသော ပမာဏထက်ကျော်လျှင် Alert ပြပါမည်။</p>
-    </div>
-    <div style="background: #f1f5f9; padding: 15px; border-radius: 15px;">
-        <label style="font-size:14px; font-weight:bold;">လစဉ် ပုံမှန်သွင်းမည့်စာရင်း (Recurring)</label>
-        <input type="text" id="recNote" placeholder="အမည် (ဥပမာ- အိမ်လခ)">
-        <input type="number" id="recAmount" placeholder="ပမာဏ">
-        <input type="number" id="recDay" placeholder="ရက်စွဲ (၁-၂၈)" min="1" max="28">
-        <button class="btn-main" onclick="addRecurring()" style="padding:10px; font-size:14px; margin-top:5px;">Recurring အသစ်ထည့်မည်</button>
-    </div>
-</div>
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyDY8o3RX38-NlRkKeOC6gHWtfKXPcaxas", authDomain: "mgjen-8b4f5.firebaseapp.com", projectId: "mgjen-8b4f5", storageBucket: "mgjen-8b4f5.firebasestorage.app", messagingSenderId: "685152708249", appId: "1:685152708249:web:6334e940e8306f0ff6ba08" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-<div class="container" id="recordsPage">
-    <button class="no-print" onclick="showPage('appContent')" style="border:none; background:none; cursor:pointer; font-size:16px;">← ရှေ့သို့</button>
-    <h3 style="margin: 15px 0;">ငွေစာရင်းအသေးစိတ်</h3>
-    <div class="table-wrap">
-        <table class="excel-table">
-            <thead><tr><th>ရက်စွဲ</th><th>Wallet</th><th>ပမာဏ</th><th>မှတ်ချက်</th><th class="no-print">❌</th></tr></thead>
-            <tbody id="ebBody"></tbody>
-        </table>
-    </div>
-    <button class="btn-main no-print" onclick="window.print()" style="margin-top:15px; background:#475569;">🖨️ စာရွက်ထုတ်မည် (Print)</button>
-</div>
+        async function handleLogin() {
+            const name = document.getElementById('staffName').value.trim();
+            const snap = await db.collection("employees").get();
+            const emp = snap.docs.find(d => d.data().name.toLowerCase() === name.toLowerCase());
 
-<div class="container" id="settingsPage">
-    <button onclick="showPage('appContent')" style="border:none; background:none; cursor:pointer; font-size:16px;">← ရှေ့သို့</button>
-    <div id="userProfile" style="text-align:center; margin-top:20px;"></div>
-    <button class="btn-main" onclick="alert('မဂ်လာပါ ဒီဆော့ဝဲလ်လေးကတော့ ငွေကိုစာရင်းဇယားနဲ့ စနစ်တကျမှတ်ထားဖို့ပဲဖြစ်ပါတယ် (ဆော့ဝဲလ်ရေးသူ-မောင်ဂျမ်း)')" style="margin-top:25px;">ℹ️ App အကြောင်း</button>
-    <button class="btn-main" onclick="handleLogout()" style="background: #ef4444; margin-top: 10px;">Logout ထွက်မည်</button>
-</div>
+            if(emp) {
+                const data = emp.data();
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('appContent').style.display = 'block';
+                document.getElementById('p-img').src = data.photo || "";
+                document.getElementById('p-name').innerText = data.name;
+                document.getElementById('p-role').innerText = data.role;
+                document.getElementById('p-pp').innerText = data.ppExp || "N/A";
 
-<script>
-    // မင်းရဲ့ Client ID ကို ဒီမှာ အမှန်ပြန်ထည့်ပေးပါ
-    const CLIENT_ID = '333590112476-29g9dh2dcvfi37n8ubp5htdfk5u3pcv1.apps.googleusercontent.com';
-    let records = JSON.parse(localStorage.getItem('f_data_v5.3')) || [];
-    let recurring = JSON.parse(localStorage.getItem('f_rec_v5.3')) || [];
-    let budget = localStorage.getItem('f_bud_v5.3') || 0;
-    let tokenClient;
-
-    function gsiLoaded() {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: CLIENT_ID,
-            scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile',
-            callback: (resp) => { if(resp.access_token) fetchUserInfo(resp.access_token); }
-        });
-    }
-
-    function handleAuthClick() {
-        // ဖုန်းမှာ အဝိုင်းလည်မနေစေဖို့ try-catch နဲ့ popup fix
-        try {
-            tokenClient.requestAccessToken({ prompt: 'consent' });
-        } catch(e) { alert("Browser Pop-up ကို ခွင့်ပြုပေးရန် လိုအပ်ပါသည်။"); }
-    }
-
-    async function fetchUserInfo(token) {
-        const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: `Bearer ${token}` } });
-        const user = await resp.json();
-        sessionStorage.setItem('isLoggedIn', 'true');
-        document.getElementById('userProfile').innerHTML = `<img src="${user.picture}" style="border-radius:50%; width:70px; border:2px solid #6366f1;"><br><b style="display:block; margin-top:10px;">${user.name}</b>`;
-        document.getElementById('loginOverlay').style.display = 'none';
-        checkRecurring();
-        showPage('appContent');
-        updateUI();
-    }
-
-    function addData() {
-        const amt = parseFloat(document.getElementById('amount').value);
-        const type = document.getElementById('type').value;
-        const wal = document.getElementById('wallet').value;
-        if(!amt) return;
-
-        if(type === 'expense' && budget > 0) {
-            const spent = records.filter(r => r.type === 'expense').reduce((s, r) => s + r.amount, 0);
-            if(spent + amt > budget) alert("⚠️ သတိပေးချက်: သတ်မှတ်ထားသော Budget Limit (" + budget + ") ကျော်လွန်သွားပါပြီ!");
+                // Loan Load
+                const loanSnap = await db.collection("loans").where("staffName", "==", data.name).get();
+                let total = 0; loanSnap.forEach(d => total += Number(d.data().amount));
+                document.getElementById('p-loan').innerText = total + " B";
+            } else { alert("Name not found!"); }
         }
 
-        records.push({ id: Date.now(), date: new Date().toLocaleDateString('en-GB'), wallet: wal, type: type, amount: amt, note: document.getElementById('note').value });
-        saveAndRefresh();
-        document.getElementById('amount').value = '';
-        document.getElementById('note').value = '';
-    }
+        async function submitLeave() {
+            const start = document.getElementById('leaveStart').value;
+            const end = document.getElementById('leaveEnd').value;
+            const reason = document.getElementById('leaveReason').value;
+            const name = document.getElementById('p-name').innerText;
 
-    function checkRecurring() {
-        const today = new Date();
-        const d = today.getDate();
-        const mY = today.getMonth() + "-" + today.getFullYear();
-        let updated = false;
-        recurring.forEach(r => {
-            if(d >= r.day && r.lastBilled !== mY) {
-                records.push({ id: Date.now(), date: today.toLocaleDateString('en-GB'), wallet: 'Auto', type: 'expense', amount: r.amount, note: r.note + " (Auto)" });
-                r.lastBilled = mY;
-                updated = true;
+            if(!start || !reason) return alert("ရက်စွဲနှင့် အကြောင်းပြချက်ထည့်ပါ");
+
+            await db.collection("leave_requests").add({
+                staffName: name, startDate: start, endDate: end || start, reason: reason,
+                status: "Pending", requestDate: new Date().toLocaleString()
+            });
+            alert("Report တင်ပြီးပါပြီ။");
+            document.getElementById('leaveReason').value = "";
+        }
+
+        // Listen Notice
+        db.collection("admin_config").doc("notice_board").onSnapshot(doc => {
+            if(doc.exists && doc.data().message) {
+                document.getElementById('noticeBoard').style.display = 'block';
+                document.getElementById('noticeMsg').innerText = doc.data().message;
             }
         });
-        if(updated) saveAndRefresh();
-    }
-
-    function addRecurring() {
-        const amt = parseFloat(document.getElementById('recAmount').value);
-        const day = parseInt(document.getElementById('recDay').value);
-        const note = document.getElementById('recNote').value;
-        if(amt && day) {
-            recurring.push({ note, amount: amt, day, lastBilled: "" });
-            localStorage.setItem('f_rec_v5.3', JSON.stringify(recurring));
-            alert("Recurring စာရင်း သိမ်းဆည်းပြီးပါပြီ။");
-        }
-    }
-
-    function saveBudget() { budget = document.getElementById('budgetLimit').value; localStorage.setItem('f_bud_v5.3', budget); }
-
-    function saveAndRefresh() {
-        localStorage.setItem('f_data_v5.3', JSON.stringify(records));
-        localStorage.setItem('f_rec_v5.3', JSON.stringify(recurring));
-        updateUI();
-    }
-
-    function updateUI() {
-        const inc = records.filter(r => r.type === 'income').reduce((s, r) => s + r.amount, 0);
-        const exp = records.filter(r => r.type === 'expense').reduce((s, r) => s + r.amount, 0);
-        document.getElementById('totalBalance').innerText = (inc - exp).toLocaleString() + " Ks";
-        
-        const body = document.getElementById('ebBody');
-        body.innerHTML = '';
-        records.slice().reverse().forEach(r => {
-            body.innerHTML += `<tr>
-                <td>${r.date}</td>
-                <td>${r.wallet || 'Cash'}</td>
-                <td class="${r.type}-text">${r.type === 'income' ? '+' : '-'}${r.amount.toLocaleString()}</td>
-                <td>${r.note}</td>
-                <td class="no-print"><button onclick="deleteData(${r.id})" style="border:none; background:none; cursor:pointer;">❌</button></td>
-            </tr>`;
-        });
-    }
-
-    function deleteData(id) { if(confirm("ဤစာရင်းကို ဖျက်မှာလား?")) { records = records.filter(r => r.id !== id); saveAndRefresh(); } }
-
-    function exportCSV() {
-        let csv = "\uFEFFရက်စွဲ,ငွေအိတ်,အမျိုးအစား,ပမာဏ,မှတ်ချက်\n";
-        records.forEach(r => { csv += `${r.date},${r.wallet},${r.type},${r.amount},${r.note}\n`; });
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = "Finance_Report.csv";
-        link.click();
-    }
-
-    function showPage(id) {
-        ['appContent', 'recordsPage', 'settingsPage', 'proPage'].forEach(p => document.getElementById(p).style.display = 'none');
-        document.getElementById(id).style.display = 'block';
-    }
-
-    function handleLogout() { sessionStorage.clear(); location.reload(); }
-    window.onload = () => { if(sessionStorage.getItem('isLoggedIn')) document.getElementById('loginOverlay').style.display = 'none'; document.getElementById('budgetLimit').value = budget; };
-</script>
-<script async defer src="https://accounts.google.com/gsi/client" onload="gsiLoaded()"></script>
+    </script>
 </body>
 </html>
