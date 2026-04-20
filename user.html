@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MGJEN Staff App</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/912/912318.png">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-firestore-compat.js"></script>
+    
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --accent: #8b5cf6; --success: #22c55e; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); padding-bottom: 30px; }
+
+        /* App Header */
+        .header { background: white; padding: 15px; text-align: center; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .container { padding: 15px; max-width: 500px; margin: 0 auto; }
+        
+        /* Profile Card */
+        .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 15px; border: 1px solid #edf2f7; }
+        .profile-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); margin-bottom: 10px; }
+        
+        /* Section Titles */
+        .sec-title { font-size: 14px; font-weight: bold; color: var(--primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+
+        /* Data Rows */
+        .data-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .data-row:last-child { border: none; }
+        .label { color: #64748b; }
+        .val { font-weight: 600; }
+
+        /* Form Inputs */
+        input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1.5px solid #e2e8f0; border-radius: 12px; outline: none; font-size: 14px; }
+        input:focus, textarea:focus { border-color: var(--primary); }
+        .btn { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .btn:active { transform: scale(0.96); }
+
+        /* Login Overlay */
+        #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        
+        #noticeBoard { display: none; background: #fffbeb; border: 1px solid #f59e0b; padding: 15px; border-radius: 15px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+    <div id="loginOverlay">
+        <div style="width:100%; max-width:320px; text-align:center;">
+            <img src="https://cdn-icons-png.flaticon.com/512/912/912318.png" width="80" style="margin-bottom:20px;">
+            <h2>MGJEN Staff Portal</h2>
+            <p style="color:#64748b; font-size:13px; margin: 10px 0 20px;">စနစ်ကိုအသုံးပြုရန် နာမည်ရိုက်ထည့်ပါ</p>
+            <input type="text" id="staffName" placeholder="Mg Mg">
+            <button class="btn" onclick="handleLogin()">Login</button>
+        </div>
+    </div>
+
+    <div class="header">
+        <h3 style="color: var(--primary);"><i class="fas fa-circle-user"></i> MGJEN HR</h3>
+    </div>
+
+    <div class="container" id="appContent" style="display:none;">
+        
+        <div id="noticeBoard">
+            <p id="noticeMsg" style="color:#b45309; font-size:14px;"></p>
+        </div>
+
+        <div class="card" style="text-align:center;">
+            <img id="p-img" src="" class="profile-img">
+            <h2 id="p-name"></h2>
+            <p id="p-role" style="color: #64748b; font-size: 14px;"></p>
+        </div>
+
+        <div class="card">
+            <p class="sec-title"><i class="fas fa-paper-plane"></i> Leave Report (ခွင့်တိုင်ရန်)</p>
+            <div style="display:flex; gap:10px;">
+                <input type="date" id="leaveStart">
+                <input type="date" id="leaveEnd">
+            </div>
+            <textarea id="leaveReason" placeholder="ခွင့်ယူရသည့် အကြောင်းအရင်း..."></textarea>
+            <button class="btn" style="background:var(--accent);" onclick="submitLeave()">Submit Report</button>
+        </div>
+
+        <div class="card">
+            <p class="sec-title"><i class="fas fa-info-circle"></i> My Info</p>
+            <div class="data-row"><span class="label">Total Loan:</span><span id="p-loan" class="val" style="color:red;">0</span></div>
+            <div class="data-row"><span class="label">Passport Exp:</span><span id="p-pp" class="val"></span></div>
+        </div>
+
+        <button class="btn" style="background:#64748b;" onclick="location.reload()">Logout</button>
+    </div>
+
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyDY8o3RX38-NlRkKeOC6gHWtfKXPcaxas", authDomain: "mgjen-8b4f5.firebaseapp.com", projectId: "mgjen-8b4f5", storageBucket: "mgjen-8b4f5.firebasestorage.app", messagingSenderId: "685152708249", appId: "1:685152708249:web:6334e940e8306f0ff6ba08" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        async function handleLogin() {
+            const name = document.getElementById('staffName').value.trim();
+            const snap = await db.collection("employees").get();
+            const emp = snap.docs.find(d => d.data().name.toLowerCase() === name.toLowerCase());
+
+            if(emp) {
+                const data = emp.data();
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('appContent').style.display = 'block';
+                document.getElementById('p-img').src = data.photo || "";
+                document.getElementById('p-name').innerText = data.name;
+                document.getElementById('p-role').innerText = data.role;
+                document.getElementById('p-pp').innerText = data.ppExp || "N/A";
+
+                // Loan Load
+                const loanSnap = await db.collection("loans").where("staffName", "==", data.name).get();
+                let total = 0; loanSnap.forEach(d => total += Number(d.data().amount));
+                document.getElementById('p-loan').innerText = total + " B";
+            } else { alert("Name not found!"); }
+        }
+
+        async function submitLeave() {
+            const start = document.getElementById('leaveStart').value;
+            const end = document.getElementById('leaveEnd').value;
+            const reason = document.getElementById('leaveReason').value;
+            const name = document.getElementById('p-name').innerText;
+
+            if(!start || !reason) return alert("ရက်စွဲနှင့် အကြောင်းပြချက်ထည့်ပါ");
+
+            await db.collection("leave_requests").add({
+                staffName: name, startDate: start, endDate: end || start, reason: reason,
+                status: "Pending", requestDate: new Date().toLocaleString()
+            });
+            alert("Report တင်ပြီးပါပြီ။");
+            document.getElementById('leaveReason').value = "";
+        }
+
+        // Listen Notice
+        db.collection("admin_config").doc("notice_board").onSnapshot(doc => {
+            if(doc.exists && doc.data().message) {
+                document.getElementById('noticeBoard').style.display = 'block';
+                document.getElementById('noticeMsg').innerText = doc.data().message;
+            }
+        });
+    </script>
+</body>
+</html>
