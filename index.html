@@ -4,95 +4,104 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MGJEN Staff App</title>
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
-    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/912/912318.png">
-
+    <link rel="icon" href="https://i.ibb.co/LDPF30Q/mgjen-icon-small.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-firestore-compat.js"></script>
     
     <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --accent: #8b5cf6; --success: #22c55e; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --accent: #8b5cf6; --success: #22c55e; --danger: #ef4444; --warning: #f59e0b; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background: var(--bg); color: var(--text); padding-bottom: 30px; }
+        
+        /* Notice Popup */
+        #noticePopup { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; align-items: center; justify-content: center; padding: 20px; }
+        .notice-content { background: white; width: 100%; max-width: 400px; border-radius: 25px; padding: 30px; text-align: center; border-top: 10px solid var(--warning); box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
 
-        /* App Header */
-        .header { background: white; padding: 15px; text-align: center; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        /* Login Page */
+        #loginOverlay { position: fixed; inset: 0; background: #fff; z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .login-box { width: 100%; max-width: 340px; text-align: center; padding: 40px 30px; border-radius: 35px; background: #fff; box-shadow: 0 15px 40px rgba(0,0,0,0.08); border: 1px solid #f1f5f9; }
+        .login-icon-box { width: 100px; height: 100px; background: linear-gradient(135deg, #eff6ff, #dbeafe); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px; font-size: 50px; color: var(--primary); }
+
+        .header { background: white; padding: 15px; text-align: center; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 100; font-weight: bold; }
         .container { padding: 15px; max-width: 500px; margin: 0 auto; }
+        .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 15px; border: 1px solid #f1f5f9; }
+        .profile-img { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 12px; background: #f1f5f9; }
         
-        /* Profile Card */
-        .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 15px; border: 1px solid #edf2f7; }
-        .profile-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); margin-bottom: 10px; }
-        
-        /* Section Titles */
+        .greeting-text { font-size: 13px; font-weight: 500; margin-top: 5px; padding: 5px 15px; border-radius: 20px; display: inline-block; }
+        .morning { background: #fff7ed; color: #c2410c; }
+        .afternoon { background: #f0f9ff; color: #0369a1; }
+        .evening { background: #f5f3ff; color: #6d28d9; }
+
         .sec-title { font-size: 14px; font-weight: bold; color: var(--primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-
-        /* Data Rows */
-        .data-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
-        .data-row:last-child { border: none; }
+        .data-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f8fafc; font-size: 14px; }
         .label { color: #64748b; }
-        .val { font-weight: 600; }
-
-        /* Form Inputs */
-        input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1.5px solid #e2e8f0; border-radius: 12px; outline: none; font-size: 14px; }
-        input:focus, textarea:focus { border-color: var(--primary); }
-        .btn { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-        .btn:active { transform: scale(0.96); }
-
-        /* Login Overlay */
-        #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .val { font-weight: 600; text-align: right; }
         
-        #noticeBoard { display: none; background: #fffbeb; border: 1px solid #f59e0b; padding: 15px; border-radius: 15px; margin-bottom: 15px; }
+        .btn { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 14px; margin-top: 10px; }
+        .btn-offday { background: #fff; color: var(--danger); border: 1.5px solid var(--danger); margin-bottom: 15px; }
+
+        #offDayModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: white; width: 100%; max-width: 350px; border-radius: 20px; padding: 20px; }
     </style>
 </head>
 <body>
 
+    <div id="noticePopup">
+        <div class="notice-content">
+            <div style="font-size: 55px; color: var(--warning); margin-bottom: 15px;"><i class="fas fa-bullhorn"></i></div>
+            <h2 style="margin-bottom: 10px;">Important Notice</h2>
+            <div id="popupMsg" style="color: #475569; line-height: 1.6; margin-bottom: 25px; font-size: 15px; white-space: pre-wrap;"></div>
+            <button class="btn" style="background: var(--warning);" onclick="closeNotice()">ဖတ်ပြီးပါပြီ</button>
+        </div>
+    </div>
+
     <div id="loginOverlay">
-        <div style="width:100%; max-width:320px; text-align:center;">
-            <img src="https://cdn-icons-png.flaticon.com/512/912/912318.png" width="80" style="margin-bottom:20px;">
-            <h2>MGJEN Staff Portal</h2>
-            <p style="color:#64748b; font-size:13px; margin: 10px 0 20px;">စနစ်ကိုအသုံးပြုရန် နာမည်ရိုက်ထည့်ပါ</p>
-            <input type="text" id="staffName" placeholder="Mg Mg">
+        <div class="login-box">
+            <div class="login-icon-box"><i class="fas fa-user-shield"></i></div>
+            <h2 style="color: var(--primary); margin-bottom: 8px;">MGJEN</h2>
+            <p style="color: #94a3b8; font-size: 13px; margin-bottom: 30px;">ဝန်ထမ်း Portal သို့ ဝင်ရောက်ပါ</p>
+            <input type="text" id="staffName" placeholder="ဝန်ထမ်းအမည် ရိုက်ထည့်ပါ" style="width:100%; padding:16px; border:1.8px solid #e2e8f0; border-radius:18px; margin-bottom:15px; outline:none; text-align:center; font-size: 15px;">
             <button class="btn" onclick="handleLogin()">Login</button>
         </div>
     </div>
 
-    <div class="header">
-        <h3 style="color: var(--primary);"><i class="fas fa-circle-user"></i> MGJEN HR</h3>
-    </div>
+    <div class="header">MGJEN HR STAFF</div>
 
     <div class="container" id="appContent" style="display:none;">
-        
-        <div id="noticeBoard">
-            <p id="noticeMsg" style="color:#b45309; font-size:14px;"></p>
-        </div>
-
         <div class="card" style="text-align:center;">
             <img id="p-img" src="" class="profile-img">
             <h2 id="p-name"></h2>
-            <p id="p-role" style="color: #64748b; font-size: 14px;"></p>
+            <div id="greetingArea" class="greeting-text"></div>
+            <p id="p-floor-top" style="color: #64748b; font-size: 14px; margin-top: 5px; font-weight: 600;"></p>
         </div>
+
+        <button class="btn btn-offday" onclick="checkTodayOffDays()">
+            <i class="fas fa-calendar-day"></i> ဒီနေ့အလုပ်နားရက်ကျသူများ
+        </button>
 
         <div class="card">
             <p class="sec-title"><i class="fas fa-paper-plane"></i> Leave Report (ခွင့်တိုင်ရန်)</p>
-            <div style="display:flex; gap:10px;">
-                <input type="date" id="leaveStart">
-                <input type="date" id="leaveEnd">
-            </div>
-            <textarea id="leaveReason" placeholder="ခွင့်ယူရသည့် အကြောင်းအရင်း..."></textarea>
+            <textarea id="leaveReason" placeholder="အကြောင်းအရာ ရေးသားပါ..." style="width: 100%; padding: 14px; border: 1.5px solid #e2e8f0; border-radius: 15px; min-height: 100px; resize: none; outline: none;"></textarea>
             <button class="btn" style="background:var(--accent);" onclick="submitLeave()">Submit Report</button>
         </div>
 
         <div class="card">
-            <p class="sec-title"><i class="fas fa-info-circle"></i> My Info</p>
-            <div class="data-row"><span class="label">Total Loan:</span><span id="p-loan" class="val" style="color:red;">0</span></div>
-            <div class="data-row"><span class="label">Passport Exp:</span><span id="p-pp" class="val"></span></div>
+            <p class="sec-title"><i class="fas fa-id-card"></i> Your Info</p>
+            <div class="data-row"><span class="label">Off Day (နားရက်):</span><span id="info-off" class="val" style="color:var(--success);">-</span></div>
+            <div class="data-row"><span class="label">Total Loan (အကြွေး):</span><span id="p-loan" class="val" style="color:red;">0 B</span></div>
+            <div class="data-row"><span class="label">Floor (အထပ်):</span><span id="info-floor" class="val">-</span></div>
         </div>
 
-        <button class="btn" style="background:#64748b;" onclick="location.reload()">Logout</button>
+        <button class="btn" style="background:#64748b;" onclick="handleLogout()">Logout</button>
+    </div>
+
+    <div id="offDayModal">
+        <div class="modal-content">
+            <h3 style="color:var(--danger); text-align:center; margin-bottom:15px;">Today's Off Day</h3>
+            <div id="offDayList" style="max-height: 250px; overflow-y: auto;"></div>
+            <button class="btn" onclick="document.getElementById('offDayModal').style.display='none'">Close</button>
+        </div>
     </div>
 
     <script>
@@ -100,50 +109,109 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
+        // အလိုအလျောက် နှုတ်ခွန်းဆက်ခြင်း လုပ်ဆောင်ချက်
+        function setGreeting() {
+            const hour = new Date().getHours();
+            const greetEl = document.getElementById('greetingArea');
+            if (hour < 12) {
+                greetEl.innerHTML = "☀️ မင်္ဂလာနံနက်ခင်းပါ... စိတ်ရွှင်လန်းပါစေ";
+                greetEl.className = "greeting-text morning";
+            } else if (hour < 17) {
+                greetEl.innerHTML = "🌤️ နေ့လယ်ခင်းမှာ အားအင်အပြည့်နဲ့ အလုပ်လုပ်ကြရအောင်";
+                greetEl.className = "greeting-text afternoon";
+            } else {
+                greetEl.innerHTML = "🌙 ဒီနေ့အတွက် ပင်ပန်းသွားပါပြီ... ကောင်းသောညလေးဖြစ်ပါစေ";
+                greetEl.className = "greeting-text evening";
+            }
+        }
+
+        // Admin Notice Board နားထောင်ခြင်း
+        db.collection("admin_config").doc("notice_board").onSnapshot(doc => {
+            if(doc.exists && doc.data().message) {
+                const msg = doc.data().message;
+                if(localStorage.getItem("last_notice") !== msg) {
+                    document.getElementById('popupMsg').innerText = msg;
+                    document.getElementById('noticePopup').style.display = 'flex';
+                }
+            }
+        });
+
+        function closeNotice() {
+            localStorage.setItem("last_notice", document.getElementById('popupMsg').innerText);
+            document.getElementById('noticePopup').style.display = 'none';
+        }
+
+        window.onload = function() {
+            setGreeting();
+            const savedName = localStorage.getItem("mgjen_user");
+            if(savedName) { fetchUserData(savedName); } 
+            else { document.getElementById('loginOverlay').style.display = 'flex'; }
+        };
+
         async function handleLogin() {
             const name = document.getElementById('staffName').value.trim();
+            if(!name) return alert("အမည်ထည့်ပါ");
+            const success = await fetchUserData(name);
+            if(success) localStorage.setItem("mgjen_user", name);
+        }
+
+        async function fetchUserData(name) {
             const snap = await db.collection("employees").get();
             const emp = snap.docs.find(d => d.data().name.toLowerCase() === name.toLowerCase());
-
             if(emp) {
                 const data = emp.data();
                 document.getElementById('loginOverlay').style.display = 'none';
                 document.getElementById('appContent').style.display = 'block';
-                document.getElementById('p-img').src = data.photo || "";
+                document.getElementById('p-img').src = data.photo || "https://i.ibb.co/LDPF30Q/mgjen-icon-small.png";
                 document.getElementById('p-name').innerText = data.name;
-                document.getElementById('p-role').innerText = data.role;
-                document.getElementById('p-pp').innerText = data.ppExp || "N/A";
-
-                // Loan Load
+                const floorVal = data.role || "-"; 
+                document.getElementById('p-floor-top').innerText = "Floor - " + floorVal;
+                document.getElementById('info-floor').innerText = floorVal;
+                document.getElementById('info-off').innerText = data.offDay || "-";
                 const loanSnap = await db.collection("loans").where("staffName", "==", data.name).get();
                 let total = 0; loanSnap.forEach(d => total += Number(d.data().amount));
                 document.getElementById('p-loan').innerText = total + " B";
-            } else { alert("Name not found!"); }
+                return true;
+            } else { 
+                alert("အမည်စာရင်းမရှိပါ!"); 
+                localStorage.removeItem("mgjen_user");
+                document.getElementById('loginOverlay').style.display = 'flex';
+                return false;
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem("mgjen_user");
+            location.reload();
+        }
+
+        async function checkTodayOffDays() {
+            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const todayName = days[new Date().getDay()];
+            const listDiv = document.getElementById('offDayList');
+            listDiv.innerHTML = "<p style='text-align:center;'>ရှာဖွေနေပါသည်...</p>";
+            document.getElementById('offDayModal').style.display = 'flex';
+            const snap = await db.collection("employees").get();
+            let html = "";
+            snap.forEach(doc => {
+                const d = doc.data();
+                if (d.offDay && d.offDay.toLowerCase().includes(todayName.toLowerCase())) {
+                    html += `<div style="padding:12px; border-bottom:1px solid #eee; display:flex; align-items:center; gap:10px;"><i class="fas fa-check-circle" style="color:var(--success)"></i> ${d.name}</div>`;
+                }
+            });
+            listDiv.innerHTML = html || "<p style='padding:20px; text-align:center; color:#94a3b8;'>ယနေ့ နားရက်ရှိသူ မရှိပါ။</p>";
         }
 
         async function submitLeave() {
-            const start = document.getElementById('leaveStart').value;
-            const end = document.getElementById('leaveEnd').value;
-            const reason = document.getElementById('leaveReason').value;
-            const name = document.getElementById('p-name').innerText;
-
-            if(!start || !reason) return alert("ရက်စွဲနှင့် အကြောင်းပြချက်ထည့်ပါ");
-
+            const reason = document.getElementById('leaveReason').value.trim();
+            if(!reason) return alert("အကြောင်းအရာ ရေးသားပါ");
             await db.collection("leave_requests").add({
-                staffName: name, startDate: start, endDate: end || start, reason: reason,
-                status: "Pending", requestDate: new Date().toLocaleString()
+                staffName: document.getElementById('p-name').innerText,
+                reason: reason, status: "Pending", submittedAt: new Date().toLocaleString()
             });
-            alert("Report တင်ပြီးပါပြီ။");
+            alert("ပေးပို့ပြီးပါပြီ");
             document.getElementById('leaveReason').value = "";
         }
-
-        // Listen Notice
-        db.collection("admin_config").doc("notice_board").onSnapshot(doc => {
-            if(doc.exists && doc.data().message) {
-                document.getElementById('noticeBoard').style.display = 'block';
-                document.getElementById('noticeMsg').innerText = doc.data().message;
-            }
-        });
     </script>
 </body>
 </html>
