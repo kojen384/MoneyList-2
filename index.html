@@ -18,6 +18,13 @@
         #noticePopup { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; align-items: center; justify-content: center; padding: 20px; }
         .notice-content { background: white; width: 100%; max-width: 400px; border-radius: 25px; padding: 30px; text-align: center; border-top: 10px solid var(--warning); box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
 
+        /* Inline Notice Bar (New) */
+        .inline-notice { background: #fffbeb; border-bottom: 1px solid #fde68a; padding: 10px 15px; display: none; align-items: center; gap: 10px; font-size: 13px; color: #92400e; position: sticky; top: 51px; z-index: 90; }
+        .inline-notice i { color: var(--warning); }
+        .notice-scroll { overflow: hidden; white-space: nowrap; width: 100%; }
+        .notice-text { display: inline-block; animation: scrollText 15s linear infinite; padding-left: 100%; }
+        @keyframes scrollText { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+
         /* Login Page */
         #loginOverlay { position: fixed; inset: 0; background: #fff; z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
         .login-box { width: 100%; max-width: 340px; text-align: center; padding: 40px 30px; border-radius: 35px; background: #fff; box-shadow: 0 15px 40px rgba(0,0,0,0.08); border: 1px solid #f1f5f9; }
@@ -68,6 +75,13 @@
 
     <div class="header">MGJEN HR STAFF</div>
 
+    <div id="inlineNoticeBar" class="inline-notice">
+        <i class="fas fa-bullhorn"></i>
+        <div class="notice-scroll">
+            <span id="scrollNoticeMsg" class="notice-text"></span>
+        </div>
+    </div>
+
     <div class="container" id="appContent" style="display:none;">
         <div class="card" style="text-align:center;">
             <img id="p-img" src="" class="profile-img">
@@ -109,7 +123,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // အလိုအလျောက် နှုတ်ခွန်းဆက်ခြင်း လုပ်ဆောင်ချက်
         function setGreeting() {
             const hour = new Date().getHours();
             const greetEl = document.getElementById('greetingArea');
@@ -125,14 +138,22 @@
             }
         }
 
-        // Admin Notice Board နားထောင်ခြင်း
+        // Admin Notice Board နားထောင်ခြင်း (Real-time)
         db.collection("admin_config").doc("notice_board").onSnapshot(doc => {
             if(doc.exists && doc.data().message) {
                 const msg = doc.data().message;
+                
+                // Inline Bar အတွက် စာသားထည့်ခြင်း
+                document.getElementById('inlineNoticeBar').style.display = 'flex';
+                document.getElementById('scrollNoticeMsg').innerText = msg;
+
+                // Popup အတွက် (စာအသစ်ဖြစ်မှ ပြရန်)
                 if(localStorage.getItem("last_notice") !== msg) {
                     document.getElementById('popupMsg').innerText = msg;
                     document.getElementById('noticePopup').style.display = 'flex';
                 }
+            } else {
+                document.getElementById('inlineNoticeBar').style.display = 'none';
             }
         });
 
