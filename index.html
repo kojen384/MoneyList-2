@@ -6,32 +6,96 @@
     <title>MGJEN Staff App</title>
     <link rel="icon" href="https://i.ibb.co/LDPF30Q/mgjen-icon-small.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-firestore-compat.js"></script>
     
     <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --accent: #8b5cf6; --success: #22c55e; --danger: #ef4444; --warning: #f59e0b; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        :root { 
+            --primary: #2563eb; 
+            --bg: #f8fafc; 
+            --text: #1e293b; 
+            --accent: #8b5cf6; 
+            --success: #22c55e; 
+            --danger: #ef4444; 
+            --warning: #f59e0b; 
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
         body { background: var(--bg); color: var(--text); padding-bottom: 30px; }
         
-        /* Notice Popup */
-        #noticePopup { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; align-items: center; justify-content: center; padding: 20px; }
-        .notice-content { background: white; width: 100%; max-width: 400px; border-radius: 25px; padding: 30px; text-align: center; border-top: 10px solid var(--warning); box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+        /* Modals & Popups */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 3000; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+        .modal-box { background: white; width: 100%; max-width: 380px; border-radius: 25px; padding: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); }
+        
+        /* Settings Tap Screen (Full Overlay) */
+        #settingsTapScreen {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #ffffff;
+            z-index: 2500;
+            overflow-y: auto;
+            padding: 20px;
+            animation: slideIn 0.25s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
 
-        /* Inline Notice Bar (New) */
+        /* Inline Notice Bar */
         .inline-notice { background: #fffbeb; border-bottom: 1px solid #fde68a; padding: 10px 15px; display: none; align-items: center; gap: 10px; font-size: 13px; color: #92400e; position: sticky; top: 51px; z-index: 90; }
         .inline-notice i { color: var(--warning); }
         .notice-scroll { overflow: hidden; white-space: nowrap; width: 100%; }
         .notice-text { display: inline-block; animation: scrollText 15s linear infinite; padding-left: 100%; }
         @keyframes scrollText { from { transform: translateX(0); } to { transform: translateX(-100%); } }
 
-        /* Login Page */
-        #loginOverlay { position: fixed; inset: 0; background: #fff; z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .login-box { width: 100%; max-width: 340px; text-align: center; padding: 40px 30px; border-radius: 35px; background: #fff; box-shadow: 0 15px 40px rgba(0,0,0,0.08); border: 1px solid #f1f5f9; }
-        .login-icon-box { width: 100px; height: 100px; background: linear-gradient(135deg, #eff6ff, #dbeafe); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px; font-size: 50px; color: var(--primary); }
+        /* Login Screen */
+        #loginOverlay { position: fixed; inset: 0; background: #fff; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .login-box { width: 100%; max-width: 340px; text-align: center; padding: 40px 25px; border-radius: 35px; background: #fff; box-shadow: 0 15px 40px rgba(0,0,0,0.08); border: 1px solid #f1f5f9; }
+        .login-icon-box { width: 90px; height: 90px; background: linear-gradient(135deg, #eff6ff, #dbeafe); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 40px; color: var(--primary); }
 
         .header { background: white; padding: 15px; text-align: center; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 100; font-weight: bold; }
+        .header-title { text-align: center; width: 100%; }
+
         .container { padding: 15px; max-width: 500px; margin: 0 auto; }
+        
+        /* Profile Card Relative Wrapper for Setting Icon */
+        .profile-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px 20px 20px 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+            border: 1px solid #f1f5f9;
+            text-align: center;
+            position: relative;
+        }
+        
+        /* Floating Setting Icon on Profile Card Corner */
+        .profile-setting-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #e2e8f0;
+        }
+        .profile-setting-btn:active {
+            transform: scale(0.9);
+            background: #e2e8f0;
+        }
+
         .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 15px; border: 1px solid #f1f5f9; }
         .profile-img { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 12px; background: #f1f5f9; }
         
@@ -45,36 +109,81 @@
         .label { color: #64748b; }
         .val { font-weight: 600; text-align: right; }
         
-        .btn { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 14px; margin-top: 10px; }
+        .input-field { width: 100%; padding: 14px; border: 1.8px solid #e2e8f0; border-radius: 15px; outline: none; font-size: 14px; transition: 0.3s; margin-bottom: 12px; }
+        .input-field:focus { border-color: var(--primary); }
+
+        .btn { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 14px; }
+        .btn:active { transform: scale(0.98); opacity: 0.9; }
         .btn-offday { background: #fff; color: var(--danger); border: 1.5px solid var(--danger); margin-bottom: 15px; }
 
-        #offDayModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: white; width: 100%; max-width: 350px; border-radius: 20px; padding: 20px; }
+        .lang-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .lang-btn {
+            flex: 1;
+            padding: 12px 5px;
+            border: 1.5px solid #e2e8f0;
+            background: #fff;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 13px;
+            color: #64748b;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.2s;
+        }
+        .lang-btn.active {
+            border-color: var(--primary);
+            background: #eff6ff;
+            color: var(--primary);
+        }
+
+        .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div id="noticePopup">
-        <div class="notice-content">
-            <div style="font-size: 55px; color: var(--warning); margin-bottom: 15px;"><i class="fas fa-bullhorn"></i></div>
-            <h2 style="margin-bottom: 10px;">Important Notice</h2>
-            <div id="popupMsg" style="color: #475569; line-height: 1.6; margin-bottom: 25px; font-size: 15px; white-space: pre-wrap;"></div>
-            <button class="btn" style="background: var(--warning);" onclick="closeNotice()">ဖတ်ပြီးပါပြီ</button>
+    <!-- Notice Popup -->
+    <div id="noticePopup" class="modal-overlay">
+        <div class="modal-box" style="text-align: center; border-top: 8px solid var(--warning);">
+            <div style="font-size: 45px; color: var(--warning); margin-bottom: 10px;"><i class="fas fa-bullhorn"></i></div>
+            <h3 style="margin-bottom: 10px;" id="lbl-notice-title">Important Notice</h3>
+            <div id="popupMsg" style="color: #475569; line-height: 1.6; margin-bottom: 20px; font-size: 14px; white-space: pre-wrap;"></div>
+            <button class="btn" style="background: var(--warning);" onclick="closeNotice()" id="lbl-notice-read">ဖတ်ပြီးပါပြီ</button>
         </div>
     </div>
 
+    <!-- Smart PIN/First-time Login Overlay -->
     <div id="loginOverlay">
         <div class="login-box">
-            <div class="login-icon-box"><i class="fas fa-user-shield"></i></div>
-            <h2 style="color: var(--primary); margin-bottom: 8px;">MGJEN</h2>
-            <p style="color: #94a3b8; font-size: 13px; margin-bottom: 30px;">ဝန်ထမ်း Portal သို့ ဝင်ရောက်ပါ</p>
-            <input type="text" id="staffName" placeholder="ဝန်ထမ်းအမည် ရိုက်ထည့်ပါ" style="width:100%; padding:16px; border:1.8px solid #e2e8f0; border-radius:18px; margin-bottom:15px; outline:none; text-align:center; font-size: 15px;">
-            <button class="btn" onclick="handleLogin()">Login</button>
+            <div class="login-icon-box"><i class="fas fa-lock" id="loginIcon"></i></div>
+            <h2 style="color: var(--primary); margin-bottom: 5px;">MGJEN HR</h2>
+            
+            <p id="loginSubtitle" style="color: #64748b; font-size: 14px; margin-bottom: 20px; font-weight:600;">စကားဝှက် ရိုက်ထည့်ပါ</p>
+            
+            <div id="nameInputGroup" style="display:none;">
+                <input type="text" id="staffName" class="input-field" placeholder="ဝန်ထမ်းအမည် ရိုက်ထည့်ပါ" style="text-align:center;">
+            </div>
+
+            <input type="password" id="staffPin" class="input-field" placeholder="PIN စကားဝှက် ရိုက်ပါ" maxlength="6" pattern="\d*" inputmode="numeric" style="text-align:center; font-size: 20px; letter-spacing: 5px;">
+            
+            <button class="btn" id="loginBtn" onclick="handleLogin()">Unlock / Login</button>
+
+            <div id="switchUserBtn" style="margin-top: 15px; display:none;">
+                <a href="javascript:void(0)" onclick="resetUserDevice()" id="lbl-switch-user" style="color:#94a3b8; font-size:12px; text-decoration:underline;">အကောင့်/နာမည် ပြောင်းမည်</a>
+            </div>
         </div>
     </div>
 
-    <div class="header">MGJEN HR STAFF</div>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-title">MGJEN HR STAFF</div>
+    </div>
 
+    <!-- Inline Scrolling Notice -->
     <div id="inlineNoticeBar" class="inline-notice">
         <i class="fas fa-bullhorn"></i>
         <div class="notice-scroll">
@@ -82,72 +191,297 @@
         </div>
     </div>
 
+    <!-- Main Content App -->
     <div class="container" id="appContent" style="display:none;">
-        <div class="card" style="text-align:center;">
-            <img id="p-img" src="" class="profile-img">
+        
+        <!-- Profile Card with Top-Right Setting Icon -->
+        <div class="profile-card">
+            <div class="profile-setting-btn" onclick="openSettingsTap()" title="Settings">
+                <i class="fas fa-cog"></i>
+            </div>
+
+            <img id="p-img" src="" class="profile-img" alt="Profile Image">
             <h2 id="p-name"></h2>
             <div id="greetingArea" class="greeting-text"></div>
             <p id="p-floor-top" style="color: #64748b; font-size: 14px; margin-top: 5px; font-weight: 600;"></p>
         </div>
 
         <button class="btn btn-offday" onclick="checkTodayOffDays()">
-            <i class="fas fa-calendar-day"></i> ဒီနေ့အလုပ်နားရက်ကျသူများ
+            <i class="fas fa-calendar-day"></i> <span id="lbl-btn-offday">ဒီနေ့အလုပ်နားရက်ကျသူများ</span>
         </button>
 
         <div class="card">
-            <p class="sec-title"><i class="fas fa-paper-plane"></i> Leave Report (ခွင့်တိုင်ရန်)</p>
-            <textarea id="leaveReason" placeholder="အကြောင်းအရာ ရေးသားပါ..." style="width: 100%; padding: 14px; border: 1.5px solid #e2e8f0; border-radius: 15px; min-height: 100px; resize: none; outline: none;"></textarea>
-            <button class="btn" style="background:var(--accent);" onclick="submitLeave()">Submit Report</button>
+            <p class="sec-title"><i class="fas fa-paper-plane"></i> <span id="lbl-leave-title">Leave Report (ခွင့်တိုင်ရန်)</span></p>
+            <textarea id="leaveReason" class="input-field" placeholder="အကြောင်းအရာ ရေးသားပါ..." style="min-height: 90px; resize: none;"></textarea>
+            <button class="btn" id="submitLeaveBtn" style="background:var(--accent);" onclick="submitLeave()">Submit Report</button>
         </div>
 
         <div class="card">
-            <p class="sec-title"><i class="fas fa-id-card"></i> Your Info</p>
-            <div class="data-row"><span class="label">Off Day (နားရက်):</span><span id="info-off" class="val" style="color:var(--success);">-</span></div>
-            <div class="data-row"><span class="label">Total Loan (အကြွေး):</span><span id="p-loan" class="val" style="color:red;">0 B</span></div>
-            <div class="data-row"><span class="label">Floor (အထပ်):</span><span id="info-floor" class="val">-</span></div>
+            <p class="sec-title"><i class="fas fa-id-card"></i> <span id="lbl-your-info">Your Info</span></p>
+            <div class="data-row"><span class="label" id="lbl-info-off">Off Day (နားရက်):</span><span id="info-off" class="val" style="color:var(--success);">-</span></div>
+            <div class="data-row"><span class="label" id="lbl-info-absent">Absent Days (အလုပ်ပျက်ရက်):</span><span id="info-absent" class="val" style="color:var(--danger);">0 ရက်</span></div>
+            <div class="data-row"><span class="label" id="lbl-info-loan">Total Loan (အကြွေး):</span><span id="p-loan" class="val" style="color:red;">0 B</span></div>
+            <div class="data-row"><span class="label" id="lbl-info-floor">Floor (အထပ်):</span><span id="info-floor" class="val">-</span></div>
         </div>
-
-        <button class="btn" style="background:#64748b;" onclick="handleLogout()">Logout</button>
     </div>
 
-    <div id="offDayModal">
-        <div class="modal-content">
-            <h3 style="color:var(--danger); text-align:center; margin-bottom:15px;">Today's Off Day</h3>
+    <!-- FULL OVERLAY SETTINGS TAP SCREEN -->
+    <div id="settingsTapScreen">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0;">
+            <h2 style="color: var(--primary); font-size: 20px;" id="lbl-settings-head"><i class="fas fa-sliders-h"></i> App Settings</h2>
+            <div onclick="closeSettingsTap()" style="width: 36px; height: 36px; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b;">
+                <i class="fas fa-times" style="font-size: 18px;"></i>
+            </div>
+        </div>
+
+        <div style="max-width: 450px; margin: 0 auto;">
+            <!-- Language Selection Section -->
+            <div class="card" style="border: 1px solid #e2e8f0; box-shadow: none;">
+                <p class="sec-title"><i class="fas fa-globe"></i> <span id="lbl-lang-title">Language / ဘာသာစကား</span></p>
+                <div class="lang-selector">
+                    <div class="lang-btn" id="lang-mm" onclick="changeLanguage('mm')">မြန်မာ</div>
+                    <div class="lang-btn" id="lang-th" onclick="changeLanguage('th')">ไทย</div>
+                    <div class="lang-btn" id="lang-zh" onclick="changeLanguage('zh')">中文</div>
+                </div>
+            </div>
+
+            <!-- PIN Change Section -->
+            <div class="card" style="border: 1px solid #e2e8f0; box-shadow: none;">
+                <p class="sec-title"><i class="fas fa-key"></i> <span id="lbl-pin-title">Change PIN (စကားဝှက်ပြင်ရန်)</span></p>
+                <p style="font-size: 12px; color: #64748b; margin-bottom: 12px;" id="lbl-pin-desc">4-6 လုံးပါ PIN စကားဝှက် သတ်မှတ်ပါ</p>
+                
+                <input type="password" id="newPin" class="input-field" placeholder="PIN စကားဝှက် အသစ်ထည့်ပါ" maxlength="6" inputmode="numeric" style="text-align:center;">
+                <input type="password" id="confirmPin" class="input-field" placeholder="PIN အသစ် ပြန်ရိုက်ပါ" maxlength="6" inputmode="numeric" style="text-align:center;">
+                
+                <button class="btn" id="savePinBtn" onclick="savePinCode()">Save PIN Code</button>
+            </div>
+
+            <!-- Back & Lock Buttons Area (Settings ထဲသို့ ရွှေ့ပြောင်းထားပါသည်) -->
+            <button class="btn" style="background:#64748b; margin-bottom: 10px;" onclick="handleLockApp()" id="lbl-btn-lock"><i class="fas fa-lock"></i> Lock Screen (စကားဝှက်ပြန်ပိတ်မည်)</button>
+            <button class="btn" style="background:#e2e8f0; color:#334155;" onclick="closeSettingsTap()" id="lbl-btn-back">Back to Main App</button>
+        </div>
+    </div>
+
+    <!-- PIN REMINDER MODAL -->
+    <div id="pinReminderModal" class="modal-overlay">
+        <div class="modal-box" style="text-align:center;">
+            <div style="font-size: 45px; color: var(--accent); margin-bottom: 10px;"><i class="fas fa-key"></i></div>
+            <h3 style="margin-bottom: 10px;" id="lbl-remind-title">PIN စကားဝှက် မရှိသေးပါ</h3>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; line-height: 1.5;" id="lbl-remind-desc">နောက်တစ်ကြိမ် နာမည်ရိုက်စရာမလိုဘဲ တိုက်ရိုက်ဝင်နိုင်ရန် PIN စကားဝှက် သတ်မှတ်ပေးပါ။</p>
+            <button class="btn" style="background:var(--accent);" onclick="closePinReminderAndOpenSetting()" id="lbl-remind-btn">PIN စကားဝှက် သတ်မှတ်မည်</button>
+        </div>
+    </div>
+
+    <!-- OFF DAY MODAL -->
+    <div id="offDayModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="color:var(--danger); text-align:center; margin-bottom:15px;" id="lbl-offday-head">Today's Off Day</h3>
             <div id="offDayList" style="max-height: 250px; overflow-y: auto;"></div>
-            <button class="btn" onclick="document.getElementById('offDayModal').style.display='none'">Close</button>
+            <button class="btn" style="margin-top:15px;" onclick="document.getElementById('offDayModal').style.display='none'" id="lbl-offday-close">Close</button>
         </div>
     </div>
 
     <script>
-        const firebaseConfig = { apiKey: "AIzaSyDY8o3RX38-NlRkKeOC6gHWtfKXPcaxas", authDomain: "mgjen-8b4f5.firebaseapp.com", projectId: "mgjen-8b4f5", storageBucket: "mgjen-8b4f5.firebasestorage.app", messagingSenderId: "685152708249", appId: "1:685152708249:web:6334e940e8306f0ff6ba08" };
+        // Firebase Config
+        const firebaseConfig = { 
+            apiKey: "AIzaSyDY8o3RX38-NlRkKeOC6gHWtfKXPcaxas", 
+            authDomain: "mgjen-8b4f5.firebaseapp.com", 
+            projectId: "mgjen-8b4f5", 
+            storageBucket: "mgjen-8b4f5.firebasestorage.app", 
+            messagingSenderId: "685152708249", 
+            appId: "1:685152708249:web:6334e940e8306f0ff6ba08" 
+        };
+        
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+
+        let currentDocId = null;
+        let savedDeviceUser = localStorage.getItem("mgjen_device_locked_user");
+        let currentLang = localStorage.getItem("app_lang") || "mm";
+
+        // Multi-Language Dictionary
+        const i18n = {
+            mm: {
+                noticeTitle: "အရေးကြီး အသိပေးချက်",
+                noticeRead: "ဖတ်ပြီးပါပြီ",
+                enterPin: "စကားဝှက် ရိုက်ထည့်ပါ",
+                enterNameAndPin: "ဝန်ထမ်းအမည်နှင့် PIN စကားဝှက် ထည့်ပါ",
+                placeholderName: "ဝန်ထမ်းအမည် ရိုက်ထည့်ပါ",
+                placeholderPin: "PIN စကားဝှက် ရိုက်ပါ",
+                switchUser: "အကောင့်/နာမည် ပြောင်းမည်",
+                offdayBtn: "ဒီနေ့အလုပ်နားရက်ကျသူများ",
+                leaveTitle: "Leave Report (ခွင့်တိုင်ရန်)",
+                leavePlaceholder: "အကြောင်းအရာ ရေးသားပါ...",
+                leaveSubmit: "Submit Report",
+                yourInfo: "Your Info",
+                infoOff: "Off Day (နားရက်):",
+                infoAbsent: "Absent Days (အလုပ်ပျက်ရက်):",
+                infoLoan: "Total Loan (အကြွေး):",
+                infoFloor: "Floor (အထပ်):",
+                lockBtn: "Lock Screen (စကားဝှက်ပြန်ပိတ်မည်)",
+                settingsHead: "App Settings",
+                langTitle: "Language / ဘာသာစကား",
+                pinTitle: "Change PIN (စကားဝှက်ပြင်ရန်)",
+                pinDesc: "4-6 လုံးပါ PIN စကားဝှက် သတ်မှတ်ပါ",
+                newPinPlaceholder: "PIN စကားဝှက် အသစ်ထည့်ပါ",
+                confirmPinPlaceholder: "PIN အသစ် ပြန်ရိုက်ပါ",
+                savePinBtn: "Save PIN Code",
+                backBtn: "Back to Main App",
+                remindTitle: "PIN စကားဝှက် မရှိသေးပါ",
+                remindDesc: "နောက်တစ်ကြိမ် နာမည်ရိုက်စရာမလိုဘဲ တိုက်ရိုက်ဝင်နိုင်ရန် PIN စကားဝှက် သတ်မှတ်ပေးပါ။",
+                remindBtn: "PIN စကားဝှက် သတ်မှတ်မည်",
+                offdayHead: "Today's Off Day",
+                offdayClose: "Close",
+                greetMorning: "☀️ မင်္ဂလာနံနက်ခင်းပါ... စိတ်ရွှင်လန်းပါစေ",
+                greetAfternoon: "🌤️ နေ့လယ်ခင်းမှာ အားအင်အပြည့်နဲ့ အလုပ်လုပ်ကြရအောင်",
+                greetEvening: "🌙 ဒီနေ့အတွက် ပင်ပန်းသွားပါပြီ... ကောင်းသောညလေးဖြစ်ပါစေ",
+                dayUnit: " ရက်"
+            },
+            th: {
+                noticeTitle: "ประกาศสำคัญ",
+                noticeRead: "รับทราบแล้ว",
+                enterPin: "กรุณาใส่รหัสผ่าน PIN",
+                enterNameAndPin: "กรอกชื่อพนักงานและรหัส PIN",
+                placeholderName: "กรอกชื่อพนักงาน",
+                placeholderPin: "กรอกรหัส PIN",
+                switchUser: "เปลี่ยนบัญชี / ชื่อ",
+                offdayBtn: "พนักงานที่หยุดวันนี้",
+                leaveTitle: "ยื่นใบลา (Leave Report)",
+                leavePlaceholder: "ระบุเหตุผลการลา...",
+                leaveSubmit: "ส่งใบลา",
+                yourInfo: "ข้อมูลของคุณ",
+                infoOff: "วันหยุดประจำสัปดาห์:",
+                infoAbsent: "จำนวนวันขาดงาน:",
+                infoLoan: "ยอดเงินกู้ยืม:",
+                infoFloor: "ชั้นที่ทำงาน:",
+                lockBtn: "ล็อคหน้าจอ (Lock Screen)",
+                settingsHead: "ตั้งค่าแอปพลิเคชัน",
+                langTitle: "ภาษา / Language",
+                pinTitle: "เปลี่ยนรหัส PIN",
+                pinDesc: "ตั้งรหัส PIN ตัวเลข 4-6 หลัก",
+                newPinPlaceholder: "กรอกรหัส PIN ใหม่",
+                confirmPinPlaceholder: "ยืนยันรหัส PIN ใหม่",
+                savePinBtn: "บันทึกรหัส PIN",
+                backBtn: "กลับหน้าหลัก",
+                remindTitle: "ยังไม่ได้ตั้งรหัส PIN",
+                remindDesc: "กรุณาตั้งรหัส PIN เพื่อการเข้าใช้งานที่สะดวกรวดเร็วในครั้งถัดไป",
+                remindBtn: "ตั้งรหัส PIN ตอนนี้",
+                offdayHead: "รายชื่อผู้หยุดงานวันนี้",
+                offdayClose: "ปิด",
+                greetMorning: "☀️ อรุณสวัสดิ์... ขอให้เป็นวันที่สดใส",
+                greetAfternoon: "🌤️ สวัสดีตอนบ่าย... สู้ๆ กับการทำงาน",
+                greetEvening: "🌙 เลิกงานแล้ว... พักผ่อนอย่างมีความสุขนะ",
+                dayUnit: " วัน"
+            },
+            zh: {
+                noticeTitle: "重要通知",
+                noticeRead: "已阅读",
+                enterPin: "请输入 PIN 密码",
+                enterNameAndPin: "输入员工姓名和 PIN 码",
+                placeholderName: "请输入员工姓名",
+                placeholderPin: "输入 PIN 码",
+                switchUser: "切换账号 / 姓名",
+                offdayBtn: "今日休息人员",
+                leaveTitle: "请假申请 (Leave Report)",
+                leavePlaceholder: "请输入请假原因...",
+                leaveSubmit: "提交申请",
+                yourInfo: "个人信息",
+                infoOff: "休息日:",
+                infoAbsent: "缺勤天数:",
+                infoLoan: "借款总额:",
+                infoFloor: "工作楼层:",
+                lockBtn: "锁定屏幕 (Lock Screen)",
+                settingsHead: "应用设置",
+                langTitle: "语言 / Language",
+                pinTitle: "修改 PIN 密码",
+                pinDesc: "设置 4-6 位数字 PIN 码",
+                newPinPlaceholder: "输入新 PIN 码",
+                confirmPinPlaceholder: "再次输入新 PIN 码",
+                savePinBtn: "保存 PIN 码",
+                backBtn: "返回主页",
+                remindTitle: "未设置 PIN 密码",
+                remindDesc: "请设置 PIN 密码，以便下次免输入姓名直接登录。",
+                remindBtn: "立即设置 PIN",
+                offdayHead: "今日休息人员",
+                offdayClose: "关闭",
+                greetMorning: "☀️ 早上好... 祝您一天心情愉快",
+                greetAfternoon: "🌤️ 下午好... 保持充沛活力",
+                greetEvening: "🌙 辛苦了一天... 祝您晚安",
+                dayUnit: " 天"
+            }
+        };
+
+        function applyLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem("app_lang", lang);
+            const t = i18n[lang];
+
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            if(document.getElementById(`lang-${lang}`)) {
+                document.getElementById(`lang-${lang}`).classList.add('active');
+            }
+
+            document.getElementById('lbl-notice-title').innerText = t.noticeTitle;
+            document.getElementById('lbl-notice-read').innerText = t.noticeRead;
+            document.getElementById('staffName').placeholder = t.placeholderName;
+            document.getElementById('staffPin').placeholder = t.placeholderPin;
+            document.getElementById('lbl-switch-user').innerText = t.switchUser;
+            document.getElementById('lbl-btn-offday').innerText = t.offdayBtn;
+            document.getElementById('lbl-leave-title').innerText = t.leaveTitle;
+            document.getElementById('leaveReason').placeholder = t.leavePlaceholder;
+            document.getElementById('submitLeaveBtn').innerText = t.leaveSubmit;
+            document.getElementById('lbl-your-info').innerText = t.yourInfo;
+            document.getElementById('lbl-info-off').innerText = t.infoOff;
+            document.getElementById('lbl-info-absent').innerText = t.infoAbsent;
+            document.getElementById('lbl-info-loan').innerText = t.infoLoan;
+            document.getElementById('lbl-info-floor').innerText = t.infoFloor;
+            document.getElementById('lbl-btn-lock').innerHTML = `<i class="fas fa-lock"></i> ${t.lockBtn}`;
+            document.getElementById('lbl-settings-head').innerHTML = `<i class="fas fa-sliders-h"></i> ${t.settingsHead}`;
+            document.getElementById('lbl-lang-title').innerText = t.langTitle;
+            document.getElementById('lbl-pin-title').innerText = t.pinTitle;
+            document.getElementById('lbl-pin-desc').innerText = t.pinDesc;
+            document.getElementById('newPin').placeholder = t.newPinPlaceholder;
+            document.getElementById('confirmPin').placeholder = t.confirmPinPlaceholder;
+            document.getElementById('savePinBtn').innerText = t.savePinBtn;
+            document.getElementById('lbl-btn-back').innerText = t.backBtn;
+            document.getElementById('lbl-remind-title').innerText = t.remindTitle;
+            document.getElementById('lbl-remind-desc').innerText = t.remindDesc;
+            document.getElementById('lbl-remind-btn').innerText = t.remindBtn;
+            document.getElementById('lbl-offday-head').innerText = t.offdayHead;
+            document.getElementById('lbl-offday-close').innerText = t.offdayClose;
+
+            setGreeting();
+            setupLoginUI();
+        }
+
+        function changeLanguage(lang) {
+            applyLanguage(lang);
+        }
 
         function setGreeting() {
             const hour = new Date().getHours();
             const greetEl = document.getElementById('greetingArea');
+            const t = i18n[currentLang];
+
             if (hour < 12) {
-                greetEl.innerHTML = "☀️ မင်္ဂလာနံနက်ခင်းပါ... စိတ်ရွှင်လန်းပါစေ";
+                greetEl.innerHTML = t.greetMorning;
                 greetEl.className = "greeting-text morning";
             } else if (hour < 17) {
-                greetEl.innerHTML = "🌤️ နေ့လယ်ခင်းမှာ အားအင်အပြည့်နဲ့ အလုပ်လုပ်ကြရအောင်";
+                greetEl.innerHTML = t.greetAfternoon;
                 greetEl.className = "greeting-text afternoon";
             } else {
-                greetEl.innerHTML = "🌙 ဒီနေ့အတွက် ပင်ပန်းသွားပါပြီ... ကောင်းသောညလေးဖြစ်ပါစေ";
+                greetEl.innerHTML = t.greetEvening;
                 greetEl.className = "greeting-text evening";
             }
         }
 
-        // Admin Notice Board နားထောင်ခြင်း (Real-time)
+        // Real-time Notice Listener
         db.collection("admin_config").doc("notice_board").onSnapshot(doc => {
             if(doc.exists && doc.data().message) {
                 const msg = doc.data().message;
-                
-                // Inline Bar အတွက် စာသားထည့်ခြင်း
                 document.getElementById('inlineNoticeBar').style.display = 'flex';
                 document.getElementById('scrollNoticeMsg').innerText = msg;
 
-                // Popup အတွက် (စာအသစ်ဖြစ်မှ ပြရန်)
                 if(localStorage.getItem("last_notice") !== msg) {
                     document.getElementById('popupMsg').innerText = msg;
                     document.getElementById('noticePopup').style.display = 'flex';
@@ -155,83 +489,221 @@
             } else {
                 document.getElementById('inlineNoticeBar').style.display = 'none';
             }
-        });
+        }, err => console.error("Notice Listen Error:", err));
 
         function closeNotice() {
             localStorage.setItem("last_notice", document.getElementById('popupMsg').innerText);
             document.getElementById('noticePopup').style.display = 'none';
         }
 
-        window.onload = function() {
-            setGreeting();
-            const savedName = localStorage.getItem("mgjen_user");
-            if(savedName) { fetchUserData(savedName); } 
-            else { document.getElementById('loginOverlay').style.display = 'flex'; }
-        };
+        window.addEventListener('DOMContentLoaded', () => {
+            applyLanguage(currentLang);
+        });
 
-        async function handleLogin() {
-            const name = document.getElementById('staffName').value.trim();
-            if(!name) return alert("အမည်ထည့်ပါ");
-            const success = await fetchUserData(name);
-            if(success) localStorage.setItem("mgjen_user", name);
+        function setupLoginUI() {
+            const t = i18n[currentLang];
+            if (savedDeviceUser) {
+                document.getElementById('nameInputGroup').style.display = 'none';
+                document.getElementById('switchUserBtn').style.display = 'block';
+                document.getElementById('loginSubtitle').innerText = `${savedDeviceUser}\n${t.enterPin}`;
+                document.getElementById('staffPin').focus();
+            } else {
+                document.getElementById('nameInputGroup').style.display = 'block';
+                document.getElementById('switchUserBtn').style.display = 'none';
+                document.getElementById('loginSubtitle').innerText = t.enterNameAndPin;
+            }
         }
 
-        async function fetchUserData(name) {
-            const snap = await db.collection("employees").get();
-            const emp = snap.docs.find(d => d.data().name.toLowerCase() === name.toLowerCase());
-            if(emp) {
-                const data = emp.data();
-                document.getElementById('loginOverlay').style.display = 'none';
-                document.getElementById('appContent').style.display = 'block';
-                document.getElementById('p-img').src = data.photo || "https://i.ibb.co/LDPF30Q/mgjen-icon-small.png";
-                document.getElementById('p-name').innerText = data.name;
-                const floorVal = data.role || "-"; 
-                document.getElementById('p-floor-top').innerText = "Floor - " + floorVal;
-                document.getElementById('info-floor').innerText = floorVal;
-                document.getElementById('info-off').innerText = data.offDay || "-";
-                const loanSnap = await db.collection("loans").where("staffName", "==", data.name).get();
-                let total = 0; loanSnap.forEach(d => total += Number(d.data().amount));
-                document.getElementById('p-loan').innerText = total + " B";
-                return true;
-            } else { 
-                alert("အမည်စာရင်းမရှိပါ!"); 
-                localStorage.removeItem("mgjen_user");
-                document.getElementById('loginOverlay').style.display = 'flex';
+        async function handleLogin() {
+            let nameToAuth = savedDeviceUser;
+            
+            if (!savedDeviceUser) {
+                nameToAuth = document.getElementById('staffName').value.trim();
+                if (!nameToAuth) return alert(i18n[currentLang].placeholderName);
+            }
+
+            const pinInput = document.getElementById('staffPin').value.trim();
+            if (!pinInput) return alert(i18n[currentLang].placeholderPin);
+
+            const loginBtn = document.getElementById('loginBtn');
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="spinner"></span>';
+
+            const success = await fetchUserData(nameToAuth, pinInput);
+            
+            if(success && !savedDeviceUser) {
+                localStorage.setItem("mgjen_device_locked_user", nameToAuth);
+                savedDeviceUser = nameToAuth;
+            }
+            
+            loginBtn.disabled = false;
+            loginBtn.innerText = 'Unlock / Login';
+            document.getElementById('staffPin').value = '';
+        }
+
+        async function fetchUserData(name, inputPin) {
+            try {
+                const snap = await db.collection("employees").where("name", "==", name).limit(1).get();
+                
+                if(!snap.empty) {
+                    const empDoc = snap.docs[0];
+                    currentDocId = empDoc.id;
+                    const data = empDoc.data();
+
+                    if (data.pinCode) {
+                        if (inputPin !== data.pinCode) {
+                            alert("PIN Error / PIN Incorrect!");
+                            return false;
+                        }
+                    } else {
+                        alert("PIN Notification / Please set your PIN in Settings.");
+                    }
+                    
+                    document.getElementById('loginOverlay').style.display = 'none';
+                    document.getElementById('appContent').style.display = 'block';
+                    document.getElementById('p-img').src = data.photo || "https://i.ibb.co/LDPF30Q/mgjen-icon-small.png";
+                    document.getElementById('p-name').innerText = data.name;
+                    
+                    const floorVal = data.role || "-"; 
+                    document.getElementById('p-floor-top').innerText = "Floor - " + floorVal;
+                    document.getElementById('info-floor').innerText = floorVal;
+                    document.getElementById('info-off').innerText = data.offDay || "-";
+
+                    const absentVal = data.absentDays !== undefined ? data.absentDays : 
+                                     (data.absentCount !== undefined ? data.absentCount : 
+                                     (data.absents !== undefined ? data.absents : 0));
+                    
+                    document.getElementById('info-absent').innerText = absentVal + i18n[currentLang].dayUnit;
+
+                    const loanSnap = await db.collection("loans").where("staffName", "==", data.name).get();
+                    let totalLoan = 0; 
+                    loanSnap.forEach(doc => totalLoan += Number(doc.data().amount || 0));
+                    document.getElementById('p-loan').innerText = totalLoan.toLocaleString() + " B";
+
+                    if (!data.pinCode) {
+                        document.getElementById('pinReminderModal').style.display = 'flex';
+                    }
+
+                    return true;
+                } else { 
+                    alert("User not found!"); 
+                    return false;
+                }
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                alert("Data Fetch Error");
                 return false;
             }
         }
 
-        function handleLogout() {
-            localStorage.removeItem("mgjen_user");
-            location.reload();
+        // Lock App Function
+        function handleLockApp() {
+            closeSettingsTap();
+            document.getElementById('appContent').style.display = 'none';
+            document.getElementById('loginOverlay').style.display = 'flex';
+            setupLoginUI();
         }
 
+        function resetUserDevice() {
+            if (confirm("Reset / Switch User Account?")) {
+                localStorage.removeItem("mgjen_device_locked_user");
+                savedDeviceUser = null;
+                document.getElementById('staffName').value = '';
+                setupLoginUI();
+            }
+        }
+
+        // Settings Tap Controls
+        function openSettingsTap() { 
+            document.getElementById('settingsTapScreen').style.display = 'block'; 
+        }
+        function closeSettingsTap() {
+            document.getElementById('settingsTapScreen').style.display = 'none';
+            document.getElementById('newPin').value = '';
+            document.getElementById('confirmPin').value = '';
+        }
+        function closePinReminderAndOpenSetting() {
+            document.getElementById('pinReminderModal').style.display = 'none';
+            openSettingsTap();
+        }
+
+        async function savePinCode() {
+            const newPin = document.getElementById('newPin').value.trim();
+            const confirmPin = document.getElementById('confirmPin').value.trim();
+
+            if (!newPin || newPin.length < 4) return alert("PIN length must be 4-6 digits!");
+            if (newPin !== confirmPin) return alert("PIN numbers do not match!");
+            if (!currentDocId) return alert("User Document ID Error!");
+
+            const btn = document.getElementById('savePinBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>';
+
+            try {
+                await db.collection("employees").doc(currentDocId).update({ pinCode: newPin });
+                alert("PIN Saved Successfully!");
+                closeSettingsTap();
+            } catch (error) {
+                alert("Save Failed: " + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = i18n[currentLang].savePinBtn;
+            }
+        }
+
+        // Off-Day Logic
         async function checkTodayOffDays() {
             const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
             const todayName = days[new Date().getDay()];
             const listDiv = document.getElementById('offDayList');
-            listDiv.innerHTML = "<p style='text-align:center;'>ရှာဖွေနေပါသည်...</p>";
+            
+            listDiv.innerHTML = "<p style='text-align:center; padding:20px;'><span class='spinner' style='border-top-color:#2563eb;'></span> Searching...</p>";
             document.getElementById('offDayModal').style.display = 'flex';
-            const snap = await db.collection("employees").get();
-            let html = "";
-            snap.forEach(doc => {
-                const d = doc.data();
-                if (d.offDay && d.offDay.toLowerCase().includes(todayName.toLowerCase())) {
-                    html += `<div style="padding:12px; border-bottom:1px solid #eee; display:flex; align-items:center; gap:10px;"><i class="fas fa-check-circle" style="color:var(--success)"></i> ${d.name}</div>`;
-                }
-            });
-            listDiv.innerHTML = html || "<p style='padding:20px; text-align:center; color:#94a3b8;'>ယနေ့ နားရက်ရှိသူ မရှိပါ။</p>";
+
+            try {
+                const snap = await db.collection("employees").get();
+                let html = "";
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    if (d.offDay && d.offDay.toLowerCase().includes(todayName.toLowerCase())) {
+                        html += `<div style="padding:12px; border-bottom:1px solid #eee; display:flex; align-items:center; gap:10px;">
+                                    <i class="fas fa-check-circle" style="color:var(--success)"></i> ${d.name}
+                                 </div>`;
+                    }
+                });
+                listDiv.innerHTML = html || "<p style='padding:20px; text-align:center; color:#94a3b8;'>No Off-Day Staff Today.</p>";
+            } catch (err) {
+                listDiv.innerHTML = "<p style='padding:20px; text-align:center; color:red;'>Fetch Error</p>";
+            }
         }
 
+        // Leave Submission Logic
         async function submitLeave() {
-            const reason = document.getElementById('leaveReason').value.trim();
-            if(!reason) return alert("အကြောင်းအရာ ရေးသားပါ");
-            await db.collection("leave_requests").add({
-                staffName: document.getElementById('p-name').innerText,
-                reason: reason, status: "Pending", submittedAt: new Date().toLocaleString()
-            });
-            alert("ပေးပို့ပြီးပါပြီ");
-            document.getElementById('leaveReason').value = "";
+            const reasonEl = document.getElementById('leaveReason');
+            const reason = reasonEl.value.trim();
+            const submitBtn = document.getElementById('submitLeaveBtn');
+
+            if(!reason) return alert("Please enter reason");
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerText = "Sending...";
+
+                await db.collection("leave_requests").add({
+                    staffName: document.getElementById('p-name').innerText,
+                    reason: reason, 
+                    status: "Pending", 
+                    submittedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                alert("Submitted Successfully!");
+                reasonEl.value = "";
+            } catch (error) {
+                alert("Submit Failed");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = i18n[currentLang].leaveSubmit;
+            }
         }
     </script>
 </body>
