@@ -142,6 +142,18 @@
 
         .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Off-day Badge Style */
+        .absent-badge {
+            background-color: #fee2e2;
+            color: var(--danger);
+            font-size: 12px;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 12px;
+            border: 1px solid #fca5a5;
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
@@ -256,7 +268,7 @@
                 <button class="btn" id="savePinBtn" onclick="savePinCode()">Save PIN Code</button>
             </div>
 
-            <!-- Back & Lock Buttons Area (Settings ထဲသို့ ရွှေ့ပြောင်းထားပါသည်) -->
+            <!-- Back & Lock Buttons Area -->
             <button class="btn" style="background:#64748b; margin-bottom: 10px;" onclick="handleLockApp()" id="lbl-btn-lock"><i class="fas fa-lock"></i> Lock Screen (စကားဝှက်ပြန်ပိတ်မည်)</button>
             <button class="btn" style="background:#e2e8f0; color:#334155;" onclick="closeSettingsTap()" id="lbl-btn-back">Back to Main App</button>
         </div>
@@ -651,7 +663,7 @@
             }
         }
 
-        // Off-Day Logic
+        // Updated Off-Day Logic with Absent Days Badge
         async function checkTodayOffDays() {
             const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
             const todayName = days[new Date().getDay()];
@@ -666,13 +678,26 @@
                 snap.forEach(doc => {
                     const d = doc.data();
                     if (d.offDay && d.offDay.toLowerCase().includes(todayName.toLowerCase())) {
-                        html += `<div style="padding:12px; border-bottom:1px solid #eee; display:flex; align-items:center; gap:10px;">
-                                    <i class="fas fa-check-circle" style="color:var(--success)"></i> ${d.name}
+                        // Admin ဘက်မှ ပြင်ဆင်ထားသော အလုပ်ပျက်ရက် တန်ဖိုးကို Dynamic စစ်ဆေးခြင်း
+                        const absentVal = d.absentDays !== undefined ? d.absentDays : 
+                                         (d.absentCount !== undefined ? d.absentCount : 
+                                         (d.absents !== undefined ? d.absents : 0));
+                        
+                        const numAbsent = Number(absentVal) || 0;
+                        const absentBadge = numAbsent > 0 ? `<span class="absent-badge">${numAbsent}</span>` : '';
+
+                        html += `<div style="padding:12px; border-bottom:1px solid #eee; display:flex; align-items:center; justify-content:space-between;">
+                                    <div style="display:flex; align-items:center; gap:10px;">
+                                        <i class="fas fa-check-circle" style="color:var(--success)"></i> 
+                                        <span style="font-weight:600; font-size:14px; color:#334155;">${d.name}</span>
+                                    </div>
+                                    ${absentBadge}
                                  </div>`;
                     }
                 });
                 listDiv.innerHTML = html || "<p style='padding:20px; text-align:center; color:#94a3b8;'>No Off-Day Staff Today.</p>";
             } catch (err) {
+                console.error("OffDay Error:", err);
                 listDiv.innerHTML = "<p style='padding:20px; text-align:center; color:red;'>Fetch Error</p>";
             }
         }
