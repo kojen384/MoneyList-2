@@ -215,7 +215,6 @@
             <img id="p-img" src="" class="profile-img" alt="Profile Image">
             <h2 id="p-name"></h2>
             <div id="greetingArea" class="greeting-text"></div>
-            <p id="p-floor-top" style="color: #64748b; font-size: 14px; margin-top: 5px; font-weight: 600;"></p>
         </div>
 
         <button class="btn btn-offday" onclick="checkTodayOffDays()">
@@ -230,6 +229,10 @@
 
         <div class="card">
             <p class="sec-title"><i class="fas fa-id-card"></i> <span id="lbl-your-info">Your Info</span></p>
+
+            <!-- Salary Row -->
+            <div class="data-row"><span class="label" id="lbl-info-salary">Salary (လစာ):</span><span id="p-salary" class="val" style="color:var(--primary);">0 B</span></div>
+
             <div class="data-row"><span class="label" id="lbl-info-off">Off Day (နားရက်):</span><span id="info-off" class="val" style="color:var(--success);">-</span></div>
             <div class="data-row"><span class="label" id="lbl-info-absent">Absent Days (အလုပ်ပျက်ရက်):</span><span id="info-absent" class="val" style="color:var(--danger);">0 ရက်</span></div>
             <div class="data-row"><span class="label" id="lbl-info-loan">Total Loan (အကြွေး):</span><span id="p-loan" class="val" style="color:red;">0 B</span></div>
@@ -326,6 +329,7 @@
                 leavePlaceholder: "အကြောင်းအရာ ရေးသားပါ...",
                 leaveSubmit: "Submit Report",
                 yourInfo: "Your Info",
+                infoSalary: "Salary (လစာ):",
                 infoOff: "Off Day (နားရက်):",
                 infoAbsent: "Absent Days (အလုပ်ပျက်ရက်):",
                 infoLoan: "Total Loan (အကြွေး):",
@@ -362,6 +366,7 @@
                 leavePlaceholder: "ระบุเหตุผลการลา...",
                 leaveSubmit: "ส่งใบลา",
                 yourInfo: "ข้อมูลของคุณ",
+                infoSalary: "เงินเดือน:",
                 infoOff: "วันหยุดประจำสัปดาห์:",
                 infoAbsent: "จำนวนวันขาดงาน:",
                 infoLoan: "ยอดเงินกู้ยืม:",
@@ -398,6 +403,7 @@
                 leavePlaceholder: "请输入请假原因...",
                 leaveSubmit: "提交申请",
                 yourInfo: "个人信息",
+                infoSalary: "薪资:",
                 infoOff: "休息日:",
                 infoAbsent: "缺勤天数:",
                 infoLoan: "借款总额:",
@@ -443,6 +449,7 @@
             document.getElementById('leaveReason').placeholder = t.leavePlaceholder;
             document.getElementById('submitLeaveBtn').innerText = t.leaveSubmit;
             document.getElementById('lbl-your-info').innerText = t.yourInfo;
+            document.getElementById('lbl-info-salary').innerText = t.infoSalary;
             document.getElementById('lbl-info-off').innerText = t.infoOff;
             document.getElementById('lbl-info-absent').innerText = t.infoAbsent;
             document.getElementById('lbl-info-loan').innerText = t.infoLoan;
@@ -575,9 +582,13 @@
                     document.getElementById('appContent').style.display = 'block';
                     document.getElementById('p-img').src = data.photo || "https://i.ibb.co/LDPF30Q/mgjen-icon-small.png";
                     document.getElementById('p-name').innerText = data.name;
+
+                    // Salary Fetching Logic
+                    const salaryVal = data.salary !== undefined ? data.salary : 
+                                     (data.basicSalary !== undefined ? data.basicSalary : 0);
+                    document.getElementById('p-salary').innerText = Number(salaryVal).toLocaleString() + " B";
                     
                     const floorVal = data.role || "-"; 
-                    document.getElementById('p-floor-top').innerText = "Floor - " + floorVal;
                     document.getElementById('info-floor').innerText = floorVal;
                     document.getElementById('info-off').innerText = data.offDay || "-";
 
@@ -678,7 +689,6 @@
                 snap.forEach(doc => {
                     const d = doc.data();
                     if (d.offDay && d.offDay.toLowerCase().includes(todayName.toLowerCase())) {
-                        // Admin ဘက်မှ ပြင်ဆင်ထားသော အလုပ်ပျက်ရက် တန်ဖိုးကို Dynamic စစ်ဆေးခြင်း
                         const absentVal = d.absentDays !== undefined ? d.absentDays : 
                                          (d.absentCount !== undefined ? d.absentCount : 
                                          (d.absents !== undefined ? d.absents : 0));
